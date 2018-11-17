@@ -1,0 +1,459 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+MODEL.V=c("bcc-csm1-1","BNU-ESM","CanESM2", "CCSM4","CESM1-BGC", "GFDL-ESM2G","GISS-E2-R","HadGEM2-ES","inmcm4","IPSL-CM5A-LR","MIROC5","MPI-ESM-LR","MRI-CGCM3","NorESM1-M") 
+
+XP.V=c("rcp45","rcp85")
+REAL="r1i1p1"
+WD="/Volumes/cmip5_soils/regridcmip5soildata/Analysis/RData"
+OUT1="/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs"
+OUT2="/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures"
+NLON=288
+NLAT=192
+
+VAR.V=c("tas","tsl","mrlsl")
+Objects=c("Annualts.arr","EOCmean.arr","LatZone.arr","LatZone.global.interp","ZoneMonthly.arr","AnomGlobalMap")
+SOIL<-c("Rock","ShiftingSand","Gelisol","Histosol","Spodosol","Andisol","Oxisol","Vertisol","Aridisol","Ultisol","Mollisol","Alfisol","Inceptisol","Entisol")
+ZONE=c("GreatPlains","PampasPlain","EurasianSteppe","ChinaMoll")
+
+YEARS=2006:2100
+Annualts.ens<-array(data=NA,dim=c((length(SOIL)+length(ZONE)+1),8,length(YEARS),length(MODEL.V)),dimnames=list(c("Global",SOIL,ZONE),c("tas","tsl0.01","tsl1.0","mrlsl0.01","mrlsl0.1","soil.minus.air","SAWR0.01","SAWR1.0"),YEARS,MODEL.V))
+
+EOC.ens<-array(data=NA,dim=c(length(SOIL)+length(ZONE)+1,8,length(MODEL.V)),dimnames=list(c("Global",SOIL,ZONE),c("tas","tsl0.01","tsl1.0","mrlsl0.01","mrlsl0.1","soil.minus.air","SAWR0.01","SAWR1.0"),MODEL.V))
+
+#Interpolated lat to regular 1 degree intervals for ensemble avg. Put only surificial layer in LatZone
+LatZone.global.ens<-array(data=NA,dim=c(180,5,length(MODEL.V)),dimnames=list(seq(-90,90,length.out=180),c("tas","tsl0.01","tsl1.0","mrlsl0.01","mrlsl0.1"),MODEL.V))
+
+# Monthly mean soil temp for historic and recent period
+ZoneMonthly.ens<-array(data=NA,dim=c(length(ZONE),5,12,2,length(MODEL.V)),dimnames=list(ZONE,c("tas","tsl0.01","tsl1.0","mrlsl0.01","mrlsl0.1"),month.abb,c("1986-2005","2081-2100"),MODEL.V))
+
+EOC.map <-array(data=NA, dim=c(180,360,length(MODEL.V),3),dimnames=list(seq(-90,90,length.out = 180),seq(-180,180,length.out=360),MODEL.V,c("tas","tsl0.01","tsl1.0")))
+
+```
+
+```{r}
+for (m in 1: length(XP.V)){ #Loop through experiments
+  for (n in 1: length(MODEL.V)){ #Loop through models
+    for (l in 1:length(VAR.V)){ #Loop through variables
+      if(MODEL.V[n]=="CCSM4") REAL<-"r2i1p1" else REAL<-"r1i1p1"
+      file.temp<-paste(MODEL.V[n],"_",XP.V[m],"_",REAL,"_",VAR.V[l],".RData",sep="")
+      file<-paste(WD,"/",MODEL.V[n],"_",XP.V[m],"_",REAL,"_",VAR.V[l],".RData",sep="")
+      if(file.temp %in% list.files(paste(WD,"/",sep=""))){load(file)}
+    } # End variables
+    
+    if(MODEL.V[n]=="GISS-E2-R" & XP.V[m]=="rcp45") next() #Go to next model if EXP is missing (e.g. for GISS rcp 4.5)
+    # FILL IN ENSEMBLE ARRAYS
+    #EOC.ens
+    {tas.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+    tsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+                  EOC.ens[,1,n]<-tas.temp
+                  EOC.ens[,2:3,n]<-tsl.temp[,c("0.01m","1m")]
+    if (exists(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","EOCmean.arr",sep="."))) {             
+    mrlsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","EOCmean.arr",sep="."))
+    EOC.ens[,4:5,n]<-mrlsl.temp[,c("0.01m","0.1m")]} else {
+      EOC.ens[,4:5,n]<-rep(NA, 2*(length(SOIL)+length(ZONE)+1))
+    }
+    EOC.ens[,6,n]<-tsl.temp[,"0.01m"]-tas.temp
+    EOC.ens[,7,n]<-tsl.temp[,"0.01m"]/tas.temp
+    EOC.ens[,8,n]<-tsl.temp[,"1m"]/tas.temp
+    }
+    
+    #FILL IN Annualts.ens
+    {tas.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tas","Annualts.arr",sep="."))
+    tsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tsl","Annualts.arr",sep="."))
+    Annualts.ens[,1,,n]<-tas.temp
+    Annualts.ens[,2:3,,n]<-tsl.temp[,c("0.01m","1m"),]
+    if (exists(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","Annualts.arr",sep="."))) {             
+      mrlsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","Annualts.arr",sep="."))
+      Annualts.ens[,4:5,,n]<-mrlsl.temp[,c("0.01m","0.1m"),]} else {
+        Annualts.ens[,4:5,,n]<-rep(NA, 2*length(YEARS)*(length(SOIL)+length(ZONE)+1))
+      }
+    Annualts.ens[,6,,n]<-tsl.temp[,"0.01m",]-tas.temp
+    Annualts.ens[,7,,n]<-tsl.temp[,"0.01m",]/tas.temp
+    Annualts.ens[,8,,n]<-tsl.temp[,"1m",]/tas.temp
+    }
+    
+    #FILL IN LatZone.global.ens
+    {
+    tas.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tas","LatZone.global.interp",sep="."))
+    tsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tsl","LatZone.global.interp",sep="."))
+    LatZone.global.ens[,1,n]<-tas.temp
+    LatZone.global.ens[,2:3,n]<-tsl.temp[,c("0.01m","1m")]
+    if (exists(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","LatZone.global.interp",sep="."))) {             
+      mrlsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","LatZone.global.interp",sep="."))
+      LatZone.global.ens[,4:5,n]<-mrlsl.temp[,c("0.01m","0.1m")]} else {
+        LatZone.global.ens[,4:5,n]<-rep(NA, length(tsl.temp[,c("0.01m","1m")]))
+      }
+    }
+    
+    #FILL IN ZoneMonthly.ens
+    {tas.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tas","ZoneMonthly.arr",sep="."))
+    tsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"tsl","ZoneMonthly.arr",sep="."))
+    ZoneMonthly.ens[,1,,,n]<-tas.temp
+    ZoneMonthly.ens[,2:3,,,n]<-tsl.temp[,c("0.01m","1m"),,]
+    if (exists(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","ZoneMonthly.arr",sep="."))) {             
+     mrlsl.temp<-get(paste(MODEL.V[n],XP.V[m],REAL,"mrlsl","ZoneMonthly.arr",sep="."))
+      ZoneMonthly.ens[,4:5,,,n]<-mrlsl.temp[,c("0.01m","0.1m"),,]} else {
+        ZoneMonthly.ens[,4:5,,,n]<-rep(NA, length(tsl.temp[,c("0.01m","0.1m"),,]))
+      }
+    }
+  } # End models
+  # Write to files
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.tas.csv",sep=""),EOC.ens[,"tas",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.tsl0.01.csv",sep=""),EOC.ens[,"tsl0.01",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.tsl1.0.csv",sep=""),EOC.ens[,"tsl1.0",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.mrlsl0.01.csv",sep=""),EOC.ens[,"mrlsl0.01",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.mrlsl0.1.csv",sep=""),EOC.ens[,"mrlsl0.1",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.SAWR0.01.csv",sep=""),EOC.ens[,"SAWR0.01",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.SAWR1.0.csv",sep=""),EOC.ens[,"SAWR1.0",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.SoilMinusAir.csv",sep=""),EOC.ens[,"soil.minus.air",])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".ZoneMonthly.tas.csv",sep=""),ZoneMonthly.ens[,"tas",,,])
+
+  write.csv(file=paste(OUT1,"/",XP.V[m],".Annualts.tsl.Global.csv",sep=""),Annualts.ens["Global","tsl0.01",,])
+  write.csv(file=paste(OUT1,"/",XP.V[m],".Annualts.tsl.Mollisol.csv",sep=""),Annualts.ens["Mollisol","tsl0.01",,])
+  
+  for(n in 1: length(MODEL.V)){
+    if(MODEL.V[n]=="CCSM4") REAL<-"r2i1p1" else REAL<-"r1i1p1"
+    if(m==1 & n==7) next() #For GISS rcp4.5 skip to next loop
+    
+    write.csv(file=paste(OUT1,"/",XP.V[m],MODEL.V[n],".ZoneMonthly.tsl0.01.csv",sep=""),ZoneMonthly.ens[,"tsl0.01",,,MODEL.V[n]])
+  }
+  
+  #With all models complete, (1) Calculate ensemble mean and SD, and (2) plot figures for all models, for current experiment
+  EOC.ens.stats<-array(data=NA,dim=c(length(SOIL)+length(ZONE)+1,8,3),dimnames=list(c("Global",SOIL,ZONE),c("tas","tsl0.01","tsl1.0","mrlsl0.01","mrlsl0.1","soil.minus.air","SAWR0.01","SAWR1.0"),c("Ens.mean","Ens.sd","Ens.se")))
+  for (c in 1:(length(SOIL)+length(ZONE)+1)){
+    EOC.ens.stats[c,,"Ens.mean"]<-apply(EOC.ens[c,,],1,mean, na.rm=TRUE)
+    EOC.ens.stats[c,,"Ens.sd"]<-apply(EOC.ens[c,,],1,sd, na.rm=TRUE)
+    #EOC.ens.stats[c,d,"Ens.se"]<-apply(EOC.ens[c,,],1,sum(!is.na()))
+  }
+  
+    # MAKE SNOW MASK
+    { File<-paste("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/",MODEL.V[n],"/tsl_",MODEL.V[n],"_198601-200512_mon.nc",sep="")
+    HistAbsoluteMap.nc<-open.nc(File)
+    #print.nc(HistAbsoluteMin.nc)
+    NLON=dim.inq.nc(HistAbsoluteMap.nc,"lon")$length
+    NLAT=dim.inq.nc(HistAbsoluteMap.nc,"lat")$length
+    NT=dim.inq.nc(HistAbsoluteMap.nc,"time")$length
+    HistAbsoluteMap<-var.get.nc(HistAbsoluteMap.nc,"tsl",start=c(1,1,1,1),count=c(NLON,NLAT,1,NT))
+    close.nc(HistAbsoluteMap.nc)
+    HistAbsoluteMin<-apply(HistAbsoluteMap,c(1,2),min)
+    #image.plot(HistAbsoluteMin)
+    SnowMask<- HistAbsoluteMin>274
+    #image.plot(SnowMask)
+    assign(paste(MODEL.V[n],"SnowMask",sep="."),SnowMask)
+    } #end snow mask routine
+  
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.ensmean.csv",sep=""),EOC.ens.stats[,,1]) 
+  write.csv(file=paste(OUT1,"/",XP.V[m],".EOC.ensSD.csv",sep=""),EOC.ens.stats[,,2])
+  
+  ## Figure 3A and C: Change in Surface and Soil Temp by Soil Order
+  #Plot the bars in custom order
+  LevelsOrder<-c("Global","Rock","ShiftingSand","Entisol","Inceptisol","Aridisol","Andisol","Gelisol","Histosol","Spodosol","Alfisol","Mollisol","Vertisol","Ultisol","Oxisol")
+  if (m==1){figname<-"Fig3C.rcp45.SoilOrder.Temp.pdf"} else figname <-"Fig3A.rcp85.SoilOrder.Temp.pdf"
+  pdf(paste(OUT2,"/","final-figs/",figname,sep=""))
+  par(mar=c(1,4,0.5,4), oma=c(6,0,1,0),mfrow=c(2,1))
+  #Plot the bars in custom order
+  LevelsOrder<-c("Global","Rock","ShiftingSand","Entisol","Inceptisol","Aridisol","Andisol","Gelisol","Histosol","Spodosol","Alfisol","Mollisol","Vertisol","Ultisol","Oxisol")
+  #dev.off()
+  par(mar=c(1,4,0.5,4), oma=c(6,0,1,0),mfrow=c(2,1))
+  {barplot(t(EOC.ens.stats[LevelsOrder,1:3,1]),beside=T,ylim=c(0,12),las=2,axes=FALSE,names.arg=rep(NA,15))
+  ticks<-seq(1.5, by=1,length.out=(15*4))[-seq(4,by=4,length.out=15)]
+  #Light tan
+  polygon(x=c(rep(ticks[1],2)-2.8,rep(ticks[15],2)+1),y=c(0,12,12,0),col=rgb(246,232,195,255,maxColorValue=255),border=NA)
+  #Tan
+  polygon(x=c(rep(ticks[16],2)-1,rep(ticks[18],2)+1),y=c(0,12,12,0),col=rgb(216,179,101,255,maxColorValue=255),border=NA)
+  #Light cyan
+  polygon(x=c(rep(ticks[19],2)-1,rep(ticks[21],2)+1),y=c(0,12,12,0),col=rgb(199,234,229,255,maxColorValue=255),border=NA)
+  #Dark cyan
+  polygon(x=c(rep(ticks[22],2)-1,rep(ticks[30],2)+1),y=c(0,12,12,0),col=rgb(1,102,94,255,maxColorValue=255),border=NA)
+  #Cyan
+  polygon(x=c(rep(ticks[31],2)-1,rep(ticks[39],2)+1),y=c(0,12,12,0),col=rgb(90,180,172,255,maxColorValue=255),border=NA)
+  #Dark Orange
+  polygon(x=c(rep(ticks[40],2)-1,rep(ticks[45],2)+2.8),y=c(0,12,12,0),col=rgb(140,81,10,255,maxColorValue=255),border=NA)
+  par(new=TRUE)
+  barplot(t(EOC.ens.stats[LevelsOrder,1:3,1]),beside=T,ylab=expression(symbol(D)~Temperature~group("(",degree~C,")")),las=2, mgp=c(2,0.5,0), col=c(gray(0.9),gray(0.5),gray(0.1)),names.arg=rep(NA,15),legend.text=c("Surface air temp","Soil temp 0.01 m","Soil temp 1.0 m"), ylim=c(0,12),args.legend=list(x="topright",bg="white"))
+  box(bty="l")
+  arrows(ticks,t(EOC.ens.stats[LevelsOrder,1:3,1]),ticks,(t(EOC.ens.stats[LevelsOrder,1:3,1])+t(EOC.ens.stats[LevelsOrder,1:3,2])),angle=90,length=0.05)
+  }
+  dev.off()
+  
+  ## Fig 3B and D: Soil Moisture at 0.1 m
+  if (m==1) figname<-"Fig3D.rcp45.mrlsl.pdf"
+  else figname <-"Fig3B.rcp85.mrlsl.pdf"
+  
+  pdf(paste(OUT2,"/final-figs/",figname,sep=""))
+  #Plot moisture only at 0.1m depth
+    par(new=FALSE)
+    {barplot(t(EOC.ens.stats[LevelsOrder,5,1]),ylim=c(-20,16),axes=FALSE,names.arg=rep(NA,15))
+    ticks<-barplot(t(EOC.ens.stats[LevelsOrder,5,1]),plot=FALSE)
+    polygon(x=c(rep(ticks[1],2)-1.5,rep(ticks[5],2)+0.6),y=c(-20,16,16,-20),col=rgb(246,232,195,255,maxColorValue=255),border=NA)
+    polygon(x=c(rep(ticks[6],2)-0.6,rep(ticks[6],2)+0.6),y=c(-20,16,16,-20),col=rgb(216,179,101,255,maxColorValue=255),border=NA)
+    polygon(x=c(rep(ticks[7],2)-0.6,rep(ticks[7],2)+0.6),y=c(-20,16,16,-20),col=rgb(199,234,229,255,maxColorValue=255),border=NA)
+    polygon(x=c(rep(ticks[8],2)-0.6,rep(ticks[10],2)+0.6),y=c(-20,16,16,-20),col=rgb(1,102,94,255,maxColorValue=255),border=NA)
+    polygon(x=c(rep(ticks[11],2)-0.6,rep(ticks[13],2)+0.6),y=c(-20,16,16,-20),col=rgb(90,180,172,255,maxColorValue=255),border=NA)
+    polygon(x=c(rep(ticks[14],2)-0.6,rep(ticks[15],2)+1.3),y=c(-20,16,16,-20),col=rgb(140,81,10,255,maxColorValue=255),border=NA)
+    par(new=TRUE)
+    barplot(t(EOC.ens.stats[LevelsOrder,5,1]),ylab=expression(symbol(D)~Soil~moisture~group("(",kg~m^{-3},")")),las=2, mgp=c(2,0.5,0), col=c(gray(0.9)),legend.text=c("Moisture 0.1 m"), ylim=c(-20,16),args.legend=list(x="topright",bg="white"))
+    box(bty="l")
+    abline(h=0,col="black")
+    arrows(ticks,t(EOC.ens.stats[LevelsOrder,5,1]),ticks,(t(EOC.ens.stats[LevelsOrder,5,1])+t(EOC.ens.stats[LevelsOrder,5,2])),angle=90,length=0.05)
+    arrows(ticks,t(EOC.ens.stats[LevelsOrder,5,1]),ticks,(t(EOC.ens.stats[LevelsOrder,5,1])-t(EOC.ens.stats[LevelsOrder,5,2])),angle=90,length=0.05)
+    }
+  dev.off()
+    
+    ## Plot ensemble time series to Global and regions of interest
+  Annualts.ens.stats<-array(data=NA,dim=c(length(c("Global",SOIL,ZONE)),6,length(YEARS),2),dimnames=list(c("Global",SOIL,ZONE),c("tas","tsl0.01","soil.minus.air","SAWR0.01","SAWR1.0","mrlsl0.1"),YEARS,c("Ens.mean","Ens.sd")))
+  for (c in 1:(length(ZONE)+length(SOIL)+1)){
+    for(d in 1:length(YEARS)){
+    Annualts.ens.stats[c,,d,"Ens.mean"]<-apply(Annualts.ens[c,c(1,2,6,7,8,5),d,],1,mean, na.rm=TRUE)
+    Annualts.ens.stats[c,,d,"Ens.sd"]<-apply(Annualts.ens[c,c(1,2,6,7,8,5),d,],1,sd, na.rm=TRUE)
+    }
+  }
+  
+  ## Fig 4A: Plot soil/air warming ratio ####
+  if (m==1) figname<-"Fig4A.rcp45.SAWR.pdf"
+  else figname <-"Fig4A.rcp85.SAWR.pdf"
+  
+  pdf(paste(OUT2,"/final-figs/",figname,sep=""))
+  {par(oma=c(5,5,5,2), mar=c(0,0,0,0), tck=0.02,mgp=c(2,0.5,0))
+  layout(rbind(c(1,2,3,7),
+             c(4,5,6,7))) 
+  #par(mfrow=c(4,5))
+  #for(i in 1:19){
+  #for(i in c(1,13,12,8,10,4)){ #Global, alfisol,mollisol, ultisol, oxisol, aridisol, gelisol
+  #Model colors
+  library(RColorBrewer)
+  mypalette<-c(brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"))
+  for(i in c(4,6,13,12,11,8)){ #Gelisol, spodisol, alfisol,mollisol, ultisol, oxisol
+    plot(2006:2100,Annualts.ens.stats[i,"SAWR1.0",,"Ens.mean"],type="l",ylab="",xlab="",cex.lab=1.4,lwd=2, cex.axis=1.4, cex.main=1.6, ylim=c(0,2), xlim=c(2000,2110), xaxt="n",yaxt="n",ylog=TRUE)
+    #abline(h=1, col="grey", lty=2, lwd=2)
+    text(2100,1.7,dimnames(Annualts.ens.stats)[[1]][i],cex=1.8, adj=c(1,0.5))
+    for(j in 1:length(MODEL.V)){
+      lines(2006:2100,Annualts.ens[i,"SAWR1.0",,j],lwd=1,col=mypalette[j])
+    }
+    lines(2006:2100,Annualts.ens.stats[i,"SAWR1.0",,"Ens.mean"],lwd=2) #Put the ens mean line on top again
+    box(lwd=2)
+    abline(h=1,col=grey, lty=2, lwd=2)
+    axis(side=1, labels=FALSE, tck=0.03, lwd=2)
+    axis(side=2, labels=FALSE, tck=0.03, lwd=2)
+    #if(i==1 | i==6 |i==11 |i ==16) axis(side=2, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+    #if(i>15) axis(side=1, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+    if(i==4 | i==12) axis(side=2, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+    if(i==8 | i==11 | i==12) axis(side=1, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+    if(i==11) mtext("Year",side=1,line=2, outer=FALSE, cex=1.4)
+  }
+  mtext("Soil / Air Warming Ratio",side=2,line=2, outer=TRUE, cex=1.4)
+  plot.new()
+  legend("center",legend=c("Ensemble mean",MODEL.V),text.col=c("black",mypalette[1:length(MODEL.V)]), col=c("black",mypalette[1:length(MODEL.V)]),lty=1, lwd=c(2,rep(1,length(MODEL.V))),cex=1.4, bty="n")
+  }
+  dev.off()
+  
+  ## Fig 4B Plot soil moisture changes through time for soil orders of interest
+  if (m==1) figname<-"Fig4B.rcp45.mrlsl.pdf"
+  else figname <-"Fig4B.rcp85.mrlsl.pdf"
+
+  pdf(paste(OUT2,"/final-figs/",figname,sep=""))
+
+{par(oma=c(5,5,5,2), mar=c(0,0,0,0), tck=0.02,mgp=c(2,0.5,0))
+layout(rbind(c(1,2,3,7),
+             c(4,5,6,7)))
+#par(mfrow=c(4,5))
+#for(i in 1:19){
+#for(i in c(1,13,12,8,10,4)){
+for(i in c(4,6,13,12,11,8)){ #Gelisol, spodisol, alfisol,mollisol, ultisol, oxisol
+  plot(2006:2100,Annualts.ens.stats[i,"mrlsl0.1",,"Ens.mean"],type="l",ylab="",xlab="",cex.lab=1.4,lwd=2, cex.axis=1.4, cex.main=1.6, ylim=c(-47,25), xlim=c(2000,2110), xaxt="n",yaxt="n",ylog=TRUE)
+  abline(h=0, col="grey", lty=2, lwd=2)
+  text(2100,22,dimnames(Annualts.ens.stats)[[1]][i],cex=1.8, adj=c(1,0.5))
+  for(j in 1:length(MODEL.V)){
+    if (MODEL.V[j]=="CCSM4") REAL <- "r2i1p1"
+    else REAL <- "r1i1p1"
+    if(!exists(paste(MODEL.V[j],XP.V[m],REAL,"mrlsl","Annualts.arr",sep="."))) next()
+    lines(2006:2100,Annualts.ens[i,"mrlsl0.1",,j],lwd=1,col=mypalette[j])
+  }
+  lines(2006:2100,Annualts.ens.stats[i,"mrlsl0.1",,"Ens.mean"],lwd=2) #Put the ens mean line on top again
+  box(lwd=2)
+  axis(side=1, labels=FALSE, tck=0.03, lwd=2)
+  axis(side=2, labels=FALSE, tck=0.03, lwd=2)
+  #if(i==1 | i==6 |i==11 |i ==16) axis(side=2, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+  #if(i>15) axis(side=1, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+  if(i==4 | i==12) axis(side=2, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+  if(i==8 | i==11 | i==12) axis(side=1, labels=TRUE, tck=0.03, cex.axis=1.6, mgp=c(2,0.5,0))
+  if(i==11) mtext("Year",side=1,line=2, outer=FALSE, cex=1.4)
+}
+mtext(expression(symbol(D)~Soil~Moisture~group("(",kg~m^{-3},")")),side=2,line=2,outer=TRUE,cex=1.4)
+plot.new()
+keepers<-c(1:4,6:8)
+legend("center",legend=c("Ensemble mean",MODEL.V[keepers]),text.col=c("black",mypalette[keepers]), col=c("black",mypalette[keepers]),lwd=c(2,rep(1,10)), cex=1.2, bty="n")
+  }
+  dev.off()
+
+  
+  ## Fig 5 Plot all the models on same graph for warming profiles in three regions:
+  # Canadian Gelisol, U.S. Molisol, Amazon Oxisol
+#   if (m==1) figname<-"Fig5.rcp45.Tsl.pdf" else figname <-"Fig5.rcp85.Tsl.pdf"
+# 
+#   pdf(paste(OUT2,"/final-figs/",figname,sep=""))
+#   {
+#   layout(rbind(c(1,2,3,4),c(1,2,3,4)),widths=c(2,2,2,1))
+#     layout.show(4)
+#   #Gelisol, Canada
+#   { par(mar=c(5,5,4,0),oma=c(0,0,0,0),tck=0.02, mgp=c(2,0.5,0),xpd=FALSE)
+#       REAL<-"r1i1p1"
+#   tsl.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#   depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#   depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#   tas.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#   profile<-c(tas.temp[22],tsl.temp[22,1:(ncol(tsl.temp)-3)])
+#   plot(profile,depths,ylim=c(-11,2), xlim=c(2,8), type="o",lwd=2, xlab=expression(symbol(D)~Temperature~group("(",degree~C,")")), ylab="Soil depth (m)", cex.lab=1.8, cex.axis=1.4,main="Canada, Gelisol",cex.main=1.6,col=mypalette[1])
+#   abline(h=0,col="grey",lwd=2)
+#   for(i in 2:length(MODEL.V)){
+#     tsl.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#     depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#     depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#     tas.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#     profile<-c(tas.temp[22],tsl.temp[22,1:(ncol(tsl.temp)-3)])
+#     lines(profile,depths,col=mypalette[i], type="o", lwd=2, pch=i)
+#   }
+#   box(lwd=2)
+#   }
+#   #Mollisol, Great Plains
+#   { #par(mar=c(5,5,4,1),oma=c(0,0,0,0),tck=0.02, mgp=c(2,0.5,0),xpd=FALSE)
+#   REAL<-"r1i1p1"
+#   tsl.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#   depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#   depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#   tas.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#   profile<-c(tas.temp[16],tsl.temp[16,1:(ncol(tsl.temp)-3)])
+#   plot(profile,depths,ylim=c(-11,2), xlim=c(2,8), type="o",lwd=2, xlab=expression(symbol(D)~Temperature~group("(",degree~C,")")), ylab="", cex.lab=1.8, cex.axis=1.4,main="Great Plains, Mollisol",cex.main=1.6,col=mypalette[1])
+#   abline(h=0,col="grey",lwd=2)
+#   for(i in 2:length(MODEL.V)){
+#     tsl.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#     depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#     depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#     tas.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#     profile<-c(tas.temp[16],tsl.temp[16,1:(ncol(tsl.temp)-3)])
+#     lines(profile,depths,col=mypalette[i], type="o", lwd=2, pch=i)
+#   }
+#   box(lwd=2)
+# }
+#  #Oxisol, Amazon
+#  { REAL<-"r1i1p1"
+#   tsl.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#   depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#   depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#   tas.temp<-get(paste(MODEL.V[1],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#   profile<-c(tas.temp[23],tsl.temp[23,1:(ncol(tsl.temp)-3)])
+#   plot(profile,depths,ylim=c(-11,2), xlim=c(2,8), type="o",lwd=2, xlab=expression(symbol(D)~Temperature~group("(",degree~C,")")), ylab="", cex.lab=1.8, cex.axis=1.4,main="Amazon, Oxisol",cex.main=1.6,col=mypalette[1])
+#   abline(h=0,col="grey",lwd=2)
+#   for(i in 2:length(MODEL.V)){
+#     tsl.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tsl","EOCmean.arr",sep="."))
+#     depths<-as.numeric(unlist(strsplit(dimnames(tsl.temp)[[2]],"m")))
+#     depths<-c(2,depths[-c(length(depths),(length(depths)-1),(length(depths)-2))]*-1)
+#     tas.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tas","EOCmean.arr",sep="."))
+#     profile<-c(tas.temp[23],tsl.temp[23,1:(ncol(tsl.temp)-3)])
+#     lines(profile,depths,col=mypalette[i], type="o", lwd=2, pch=i)
+#   }
+#   box(lwd=2)
+#   }
+#   plot.new()
+#   par(mar=c(0,0,0,0),oma=c(0,1,0,1))
+#   legend("center",legend=c(MODEL.V,col=1:length(MODEL.V)), text.col=1:length(MODEL.V), lty=1, pch=1:length(MODEL.V), lwd=2, bty="n", cex=1.4)
+#   } 
+#   dev.off()
+
+} # End exp
+
+```
+
+
+Make Figures 1A,1B
+```{r}
+
+EOC.ens.map <-array(data=NA, dim=c(NLON,NLAT,length(MODEL.V),4),dimnames=list(seq(1,NLON,length.out=NLON),seq(1,NLAT,length.out = NLAT),MODEL.V,c("tas","tsl0.01","tsl1.0","SAWR0.01")))
+    
+
+ for (m in 1: length(XP.V)){ #Loop through experiments
+   for (i in 1: length(MODEL.V)){
+     if(MODEL.V[i]=="CCSM4") REAL<-"r2i1p1" else REAL<-"r1i1p1"
+    if(MODEL.V[i]=="GISS-E2-R") next() #Go to next model if EXP is missing (e.g. for GISS rcp 4.5)
+     if(MODEL.V[i]=="BNU-ESM" & XP.V[m]=="rcp45") next()
+      file<-paste(WD,"/",MODEL.V[i],"_",XP.V[m],"_",REAL,"_tsl",".RData",sep="")
+      load(file)
+      tasfile <- paste(WD,"/",MODEL.V[i],"_",XP.V[m],"_",REAL,"_tas",".RData",sep="")
+      load(tasfile)
+      
+      # Get data
+      tslAnom.1cm.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tsl","AnomGlobalmap",sep="."))[,,"0.01m"]
+      tslAnom.1m.temp <- get(paste(MODEL.V[i],XP.V[m],REAL,"tsl","AnomGlobalmap",sep="."))[,,"1m"]
+      tasAnom.temp<-get(paste(MODEL.V[i],XP.V[m],REAL,"tas","AnomGlobalmap",sep="."))
+      tsl1cm.over.tas <- tslAnom.1cm.temp/tasAnom.temp
+      # Assign to EOC
+      EOC.ens.map[,,i,"tas"] <- tasAnom.temp
+      EOC.ens.map[,,i,"tsl0.01"] <- tslAnom.1cm.temp
+      EOC.ens.map[,,i,"tsl1.0"] <- tslAnom.1m.temp
+      EOC.ens.map[,,i,"SAWR0.01"] <- tsl1cm.over.tas
+
+      pdf(paste("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/Diagnostic/",MODEL.V[i],"_",XP.V[m],sep=""))
+        image.plot(EOC.ens.map[,,i,"SAWR0.01"])
+      dev.off()
+      
+      ## To do - interpolate to 1 degree 
+    
+      # tasAnom<-get(paste(MODEL.V[i],XP.V[m],REAL,"tas","AnomGlobalmap",sep="."))
+      # tsl.minus.tas.anom<-tslAnom.1cm-tasAnom
+      # #SO<-get(paste(MODEL.V[i],REAL,"DampingDepth",sep="."))[,,3]
+      # tslHist.1m<-get(paste(MODEL.V[i],REAL,"tsl","HistAbsolutemap",sep="."))[,,"1m"]
+      # tslHist.1cm<-get(paste(MODEL.V[i],REAL,"tsl","HistAbsolutemap",sep="."))[,,"0.01m"]
+      # tasHist<-get(paste(MODEL.V[i],REAL,"tas","HistAbsolutemap",sep="."))
+      # tsl.minus.tas.Hist<-tslHist.1m-tasHist
+      # tsl.minus.tas.EOC<-(tslHist.1m+tslAnom.1m)-(tasHist+tasAnom)
+      # tasEOC<-tasAnom+tasHist-273.15
+      # tasHist<-tasHist-273.15
+   } # End model loop
+   # Calculate ensemble means
+   EOC.ens.map.stats<-array(data=NA,dim=c(NLON,NLAT,4,1),dimnames=list(seq(1,NLON,length.out=NLON),seq(1,NLAT,length.out = NLAT),c("tas","tsl0.01","tsl1.0","SAWR0.01"),c("Ens.mean")))                                    
+  for (c in 1:NLON){
+    for (d in 1:NLAT){
+      EOC.ens.map.stats[c,d,"tas","Ens.mean"]<-mean(EOC.ens.map[c,d,,"tas"], na.rm=TRUE)
+      EOC.ens.map.stats[c,d,"tsl0.01","Ens.mean"]<-mean(EOC.ens.map[c,d,,"tsl0.01"], na.rm=TRUE)
+      EOC.ens.map.stats[c,d,"tsl1.0","Ens.mean"]<-mean(EOC.ens.map[c,d,,"tsl1.0"], na.rm=TRUE)
+      EOC.ens.map.stats[c,d,"SAWR0.01","Ens.mean"]<- mean(EOC.ens.map[c,d,,"SAWR0.01"],na.rm=TRUE)
+    }
+    
+    
+    
+  }
+   
+   pdf(paste("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Fig1A","_",XP.V[m],".pdf",sep=""))
+   image.plot(EOC.ens.map.stats[,,"tsl0.01","Ens.mean"])
+   title("Ensemble Mean EOC Soil Temperature Anomaly (0.01m) (C)")
+   dev.off()
+   
+   pdf(paste("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Fig1","_",XP.V[m],".pdf",sep=""))
+   image.plot(EOC.ens.map.stats[,,"tsl1.0","Ens.mean"])
+   title("Ensemble Mean EOC Soil Temperature Anomaly (1.0m) (C)")
+   dev.off()
+   
+
+   
+   
+   pdf(paste("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/EOCtasMap","_",XP.V[m],".pdf",sep=""))
+   image.plot(EOC.ens.map.stats[,,"tas","Ens.mean"])
+   title("Tas (C)")
+   dev.off()
+   
+   pdf(paste("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Fig1B","_",XP.V[m],".pdf",sep=""))
+   image.plot(EOC.ens.map.stats[,,"SAWR0.01","Ens.mean"])
+   title("Soil Anomaly (0.01m) / Surface Temperature Anomaly")
+   dev.off()
+   
+} # End Expt loop
+   
+
+for 
+    
+```
+
