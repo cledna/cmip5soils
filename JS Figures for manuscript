@@ -1,0 +1,1247 @@
+---
+title: "Jenny’s figures for CMIP5 paper"
+author: "Jenny Soong"
+date: "4/16/2019"
+output: html_document
+
+---
+
+** csv's produced from TempAdvance_soilx_cl_JS.Rmd chuck around line 235
+To produce csv's for RCP 4.5 change XP to 4.5 and update that chunk of code for rcp 4.5. then finish this code to produce 4.5 figures 
+
+```{r}
+rm(list=ls(all.names = TRUE))
+library("ggplot2")
+library("dplyr")
+library(gridExtra)
+
+#setwd("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance")
+##  For some reason setting wd doesn't work here, need to load each csv with full path name
+
+#load EOC and Hist taily tsl files for RCP8.5
+Entisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Entisol_Daily.csv", header=TRUE)
+Inceptisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Inceptisol_Daily.csv", header=TRUE)
+Alfisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Alfisol_Daily.csv", header=TRUE)
+Mollisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Mollisol_Daily.csv", header=TRUE)
+Ultisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Ultisol_Daily.csv", header=TRUE)
+Aridisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Aridisol_Daily.csv", header=TRUE)
+Vertisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Vertisol_Daily.csv", header=TRUE)
+Oxisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Oxisol_Daily.csv", header=TRUE)
+Andisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Andisol_Daily.csv", header=TRUE)
+Spodosol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Spodosol_Daily.csv", header=TRUE)
+Histosol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Histosol_Daily.csv", header=TRUE)
+Gelisol_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Gelisol_Daily.csv", header=TRUE)
+ShiftingSand_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_ShiftingSand_Daily.csv", header=TRUE)
+Rock_tsl8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp85_Rock_Daily.csv", header=TRUE)
+
+
+
+#load EOC and Hist taily tsl files for RCP4.5
+# Entisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Entisol_Daily.csv", header=TRUE)
+# Inceptisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Inceptisol_Daily.csv", header=TRUE)
+# Alfisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Alfisol_Daily.csv", header=TRUE)
+# Mollisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Mollisol_Daily.csv", header=TRUE)
+# Ultisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Ultisol_Daily.csv", header=TRUE)
+# Aridisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Aridisol_Daily.csv", header=TRUE)
+# Vertisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Vertisol_Daily.csv", header=TRUE)
+# Oxisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Oxisol_Daily.csv", header=TRUE)
+# Andisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Andisol_Daily.csv", header=TRUE)
+# Spodosol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Spodosol_Daily.csv", header=TRUE)
+# Histosol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Histosol_Daily.csv", header=TRUE)
+# Gelisol_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Gelisol_Daily.csv", header=TRUE)
+# ShiftingSand_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_ShiftingSand_Daily.csv", header=TRUE)
+# Rock_tsl4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/tsl_rcp45_Rock_Daily.csv", header=TRUE)
+
+
+```
+
+
+
+NOT NEEDED : Subset data for EOC and HIST
+```{r}
+
+# Alfisol_tslHist<-Alfisol_tsl8.5[which(Alfisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Andisol_tslHist<-Andisol_tsl8.5[which(Andisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Aridisol_tslHist<-Aridisol_tsl8.5[which(Aridisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Entisol_tslHist<-Entisol_tsl8.5[which(Entisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Gelisol_tslHist<-Gelisol_tsl8.5[which(Gelisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Histosol_tslHist<-Histosol_tsl8.5[which(Histosol_tsl8.5$period=="hist"),]  #subset data for hist
+# Inceptisol_tslHist<-Inceptisol_tsl8.5[which(Inceptisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Mollisol_tslHist<-Mollisol_tsl8.5[which(Mollisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Oxisol_tslHist<-Oxisol_tsl8.5[which(Oxisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Rock_tslHist<-Rock_tsl8.5[which(Rock_tsl8.5$period=="hist"),]  #subset data for hist
+# ShiftingSand_tslHist<-ShiftingSand_tsl8.5[which(ShiftingSand_tsl8.5$period=="hist"),]  #subset data for hist
+# Spodosol_tslHist<-Spodosol_tsl8.5[which(Spodosol_tsl8.5$period=="hist"),]  #subset data for hist
+# Ultisol_tslHist<-Ultisol_tsl8.5[which(Ultisol_tsl8.5$period=="hist"),]  #subset data for hist
+# Vertisol_tslHist<-Vertisol_tsl8.5[which(Vertisol_tsl8.5$period=="hist"),]  #subset data for hist
+# 
+# Alfisol_tslEOC<-Alfisol_tsl8.5[which(Alfisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Andisol_tslEOC<-Andisol_tsl8.5[which(Andisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Aridisol_tslEOC<-Aridisol_tsl8.5[which(Aridisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Entisol_tslEOC<-Entisol_tsl8.5[which(Entisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Gelisol_tslEOC<-Gelisol_tsl8.5[which(Gelisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# EOCosol_tslEOC<-EOCosol_tsl8.5[which(EOCosol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Inceptisol_tslEOC<-Inceptisol_tsl8.5[which(Inceptisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Mollisol_tslEOC<-Mollisol_tsl8.5[which(Mollisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Oxisol_tslEOC<-Oxisol_tsl8.5[which(Oxisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Rock_tslEOC<-Rock_tsl8.5[which(Rock_tsl8.5$period=="EOC"),]  #subset data for EOC
+# ShiftingSand_tslEOC<-ShiftingSand_tsl8.5[which(ShiftingSand_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Spodosol_tslEOC<-Spodosol_tsl8.5[which(Spodosol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Ultisol_tslEOC<-Ultisol_tsl8.5[which(Ultisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+# Vertisol_tslEOC<-Vertisol_tsl8.5[which(Vertisol_tsl8.5$period=="EOC"),]  #subset data for EOC
+
+
+```
+
+
+Mannually produce ensemble mean for seasonal trends figure
+```{r}
+Alf <-  Alfisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Alf
+
+And <-  Andisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+And
+
+Arid <-  Aridisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Arid
+
+Ent <-  Entisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Ent
+
+Gel <-  Gelisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Gel
+
+Hist <-  Histosol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Hist
+
+Incept <-  Inceptisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Incept
+
+Moll <-  Mollisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Moll
+
+Ox <-  Oxisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Ox
+
+Rock <-  Rock_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Rock
+
+SS <-  ShiftingSand_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+SS
+
+Spod <-  Spodosol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Spod
+
+Ult <-  Ultisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Ult
+
+Vert <-  Vertisol_tsl8.5 %>%
+  group_by(day, period) %>%
+  summarise(
+             N=13,
+             mean_tsl= mean(value, na.rm=T),
+             sd_tsl=sd(value, na.rm=T),
+             se_tsl=sd_tsl/sqrt(N)
+  )
+Vert
+
+```
+
+Produce Figure 4 (?)  of ensemble mean average daily soil temp (1cm) for the historical period and EOC for each of the 12 soil types. 
+```{r fig,  fig.width = 10, fig.height = 10}
+
+
+a<-ggplot(Alf, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="a) Alfisol")+ theme(legend.position="none",axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))
+
+b<-ggplot(And, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="b) Andisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+c<-ggplot(Arid, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (˚C)", title="c) Aridisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+d<-ggplot(Ent, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="d) Entisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+e<-ggplot(Gel, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="e) Gelisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))
+
+f<-ggplot(Hist, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="f) Histosol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+g<-ggplot(Incept, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (˚C)", title="g) Inceptisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+h<-ggplot(Moll, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="h) Mollisol")+ theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y=element_blank(),text = element_text(size=16))
+
+i<-ggplot(Ox, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="i) Oxisol")+ theme(legend.position="none",text = element_text(size=16))
+
+j<-ggplot(Spod, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="j) Spodosol")+ theme(legend.position="none", axis.title.y=element_blank(),text = element_text(size=16))
+
+k<-ggplot(Ult, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="k) Ultisol")+ theme(legend.position="none", axis.title.y=element_blank(),text = element_text(size=16))
+
+l<-ggplot(Vert, aes(x=day, y=mean_tsl-273.15))+ 
+  geom_point(aes(color=period))+theme_bw()+scale_color_manual(values = c("hist" = "gray", "EOC" = "black"))+
+  labs(x="DOY", y="Soil Temperature (C)", title="l) Vertisol")+ theme(legend.position="none", axis.title.y=element_blank(),text = element_text(size=16))
+
+#library(grid)
+#library(gtable)
+#legend = gtable_filter(ggplot_gtable(ggplot_build(a)), "guide-box")
+
+pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Annual tsl Hist-EOC.pdf', width = 10, height = 10)
+grid.arrange(a,b,c,d,e,f,g,h,i,j,k,l, nrow=3)
+dev.off()
+
+## Legend: Gray= historical period, Black= EOC period
+
+
+```
+
+
+Extract the # of days <0  (<273.15) for Andisol, Gelisol, Histosol, Inceptisol, Mollisol, Spodosol
+```{r}
+AndHist<-subset(And, period=='hist')
+AndEOC<-subset(And, period=='EOC')
+length(which(AndHist$mean_tsl<273.15))
+length(which(AndEOC$mean_tsl<273.15))
+
+GelHist<-subset(Gel, period=='hist')
+GelEOC<-subset(Gel, period=='EOC')
+length(which(GelHist$mean_tsl<273.15))
+length(which(GelEOC$mean_tsl<273.15))
+
+SpodHist<-subset(Spod, period=='hist')
+SpodEOC<-subset(Spod, period=='EOC')
+length(which(SpodHist$mean_tsl<273.15))
+length(which(SpodEOC$mean_tsl<273.15))
+
+HistHist<-subset(Hist, period=='hist')
+HistEOC<-subset(Hist, period=='EOC')
+length(which(HistHist$mean_tsl<273.15))
+length(which(HistEOC$mean_tsl<273.15))
+
+InceptHist<-subset(Incept, period=='hist')
+InceptEOC<-subset(Incept, period=='EOC')
+length(which(InceptHist$mean_tsl<273.15))
+length(which(InceptEOC$mean_tsl<273.15))
+
+MollHist<-subset(Moll, period=='hist')
+MollEOC<-subset(Moll, period=='EOC')
+length(which(MollHist$mean_tsl<273.15))
+length(which(MollEOC$mean_tsl<273.15))
+
+```
+
+
+
+
+Figure of change in GLOBAL  tas, tsl 0.01 and tsl1.0 over the 21st century  Rcp8.5
+
+```{r}
+#rm(list=ls(all.names = TRUE))
+#library("ggplot2")
+
+
+GlobalChange85=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsGlobal_rcp8.5_JS.csv")
+
+
+Plot<-ggplot(GlobalChange85, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Global....tas......Ens.mean.., color="Annualts.ens.stats..Global....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Global....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Global....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Global....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Global....tsl1.0......Ens.mean.."))+
+  geom_line(aes(y=(Annualts.ens.stats..Global....tas......Ens.mean..-Annualts.ens.stats..Global....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="Global Ensemble mean (rcp8.5)")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm", "Air - Soil 100 cm"), values= c("black","blue","red", "grey70"))+
+  theme(legend.position=c(0.3,0.8)) +
+  theme(legend.title=element_blank())+  theme(text = element_text(size=20))
+
+Plot
+
+####To export as pdf run the following lines all together
+
+#  pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Global temp change over time 8.5.pdf', width = 5, height = 5)
+#  plot(Plot)
+#  dev.off()
+
+```
+
+
+Figure of change in GLOBAL tas, tsl 0.01 and tsl1.0 over the 21st century  Rcp4.5
+
+```{r}
+
+GlobalChange45=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsGlobal_rcp4.5_JS.csv")
+
+
+Plot<-ggplot(GlobalChange45, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Global....tas......Ens.mean.., color="Annualts.ens.stats..Global....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Global....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Global....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Global....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Global....tsl1.0......Ens.mean.."))+
+  geom_line(aes(y=(Annualts.ens.stats..Global....tas......Ens.mean..-Annualts.ens.stats..Global....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="Global Ensemble mean (rcp4.5)")+theme_bw()+
+ scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm", "Air - Soil 100 cm"), values= c("black","blue","red", "grey"))+
+ theme(legend.position="none")+ #theme(legend.position=c(0.25,0.86)) +
+  theme(legend.title=element_blank())+  theme(text = element_text(size=20))
+
+Plot
+
+####To export as pdf run the following lines all together
+
+#  pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Global temp change over time 4.5 no legend.pdf', width = 5, height = 5)
+#  plot(Plot)
+#  dev.off()
+
+
+```
+
+Organize data for each soil order file in the csvs folder so that we can make plots of tas, tsl0.01 and tsl1.0 over the 21st century AND merge with sd files
+** FOR RCP8.5
+
+```{r}
+#load Annual Ens_mean files for RCP8.5 for each soil order
+Entisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsEntisol85_JS.csv", header=TRUE)
+Inceptisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsInceptisol85_JS.csv", header=TRUE)
+Alfisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAlfisol85_JS.csv", header=TRUE)
+Mollisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsMollisol85_JS.csv", header=TRUE)
+Ultisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsUltisol85_JS.csv", header=TRUE)
+Aridisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAridisol85_JS.csv", header=TRUE)
+Vertisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsVertisol85_JS.csv", header=TRUE)
+Oxisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsOxisol85_JS.csv", header=TRUE)
+Andisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAndisol85_JS.csv", header=TRUE)
+Spodosol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsSpodosol85_JS.csv", header=TRUE)
+Histosol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsHistosol85_JS.csv", header=TRUE)
+Gelisol8.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsGelisol85_JS.csv", header=TRUE)
+
+
+#load Annual Ens_sd files for RCP8.5 for each soil order
+Entisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsEntisol85_sd_JS.csv", header=TRUE)
+Inceptisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsInceptisol85_sd_JS.csv", header=TRUE)
+Alfisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAlfisol85_sd_JS.csv", header=TRUE)
+Mollisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsMollisol85_sd_JS.csv", header=TRUE)
+Ultisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsUltisol85_sd_JS.csv", header=TRUE)
+Aridisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAridisol85_sd_JS.csv", header=TRUE)
+Vertisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsVertisol85_sd_JS.csv", header=TRUE)
+Oxisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsOxisol85_sd_JS.csv", header=TRUE)
+Andisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAndisol85_sd_JS.csv", header=TRUE)
+Spodosol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsSpodosol85_sd_JS.csv", header=TRUE)
+Histosol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsHistosol85_sd_JS.csv", header=TRUE)
+Gelisol8.5_sd=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsGelisol85_sd_JS.csv", header=TRUE)
+
+#merge mean and sd files 
+Alfisol <- merge(Alfisol8.5,Alfisol8.5_sd,by="Row.names")
+Andisol <- merge(Andisol8.5,Andisol8.5_sd,by="Row.names")
+Aridisol <- merge(Aridisol8.5,Aridisol8.5_sd,by="Row.names")
+Entisol <- merge(Entisol8.5,Entisol8.5_sd,by="Row.names")
+Gelisol <- merge(Gelisol8.5,Gelisol8.5_sd,by="Row.names")
+Histosol <- merge(Histosol8.5,Histosol8.5_sd,by="Row.names")
+Inceptisol <- merge(Inceptisol8.5,Inceptisol8.5_sd,by="Row.names")
+Mollisol <- merge(Mollisol8.5,Mollisol8.5_sd,by="Row.names")
+Oxisol <- merge(Oxisol8.5,Oxisol8.5_sd,by="Row.names")
+Spodosol <- merge(Spodosol8.5,Spodosol8.5_sd,by="Row.names")
+Ultisol <- merge(Ultisol8.5,Ultisol8.5_sd,by="Row.names")
+Vertisol <- merge(Vertisol8.5,Vertisol8.5_sd,by="Row.names")
+
+
+
+```
+
+
+
+
+Plots of tas, tsl0.01 and tsl 1.0 CLEAN with no ribbons (RCP8.5)
+```{r}
+
+Alfisol85_Plot<-ggplot(Alfisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tas......Ens.mean.., color="Annualts.ens.stats..Alfisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.."))+
+    geom_line(aes(y=(Annualts.ens.stats..Alfisol....tas......Ens.mean..-Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="a) Alfisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm", "Air - Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position=c(0.5,0.8), legend.title = element_blank(), axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Alfisol85_Plot
+
+Andisol85_Plot<-ggplot(Andisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tas......Ens.mean.., color="Annualts.ens.stats..Andisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Andisol....tas......Ens.mean..-Annualts.ens.stats..Andisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="b) Andisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Andisol85_Plot
+
+Aridisol85_Plot<-ggplot(Aridisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tas......Ens.mean.., color="Annualts.ens.stats..Aridisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Aridisol....tas......Ens.mean..-Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="c) Aridisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Aridisol85_Plot
+
+Entisol85_Plot<-ggplot(Entisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tas......Ens.mean.., color="Annualts.ens.stats..Entisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Entisol....tas......Ens.mean..-Annualts.ens.stats..Entisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="d) Entisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Entisol85_Plot
+
+Gelisol85_Plot<-ggplot(Gelisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tas......Ens.mean.., color="Annualts.ens.stats..Gelisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Gelisol....tas......Ens.mean..-Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="e) Gelisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Gelisol85_Plot
+
+Histosol85_Plot<-ggplot(Histosol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tas......Ens.mean.., color="Annualts.ens.stats..Histosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Histosol....tas......Ens.mean..-Annualts.ens.stats..Histosol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="f) Histosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Histosol85_Plot
+
+Inceptisol85_Plot<-ggplot(Inceptisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tas......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Inceptisol....tas......Ens.mean..-Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="g) Inceptisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Inceptisol85_Plot
+
+Mollisol85_Plot<-ggplot(Mollisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tas......Ens.mean.., color="Annualts.ens.stats..Mollisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="h) Mollisol")+theme_bw()+
+      geom_line(aes(y=(Annualts.ens.stats..Mollisol....tas......Ens.mean..-Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean..), color="grey"))+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Mollisol85_Plot
+
+Oxisol85_Plot<-ggplot(Oxisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tas......Ens.mean.., color="Annualts.ens.stats..Oxisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Oxisol....tas......Ens.mean..-Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="i) Oxisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none",text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Oxisol85_Plot
+
+Spodosol85_Plot<-ggplot(Spodosol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tas......Ens.mean.., color="Annualts.ens.stats..Spodosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Spodosol....tas......Ens.mean..-Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="j) Spodosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Spodosol85_Plot
+
+Ultisol85_Plot<-ggplot(Ultisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tas......Ens.mean.., color="Annualts.ens.stats..Ultisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Ultisol....tas......Ens.mean..-Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="m) Ultisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Ultisol85_Plot
+
+Vertisol85_Plot<-ggplot(Vertisol8.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tas......Ens.mean.., color="Annualts.ens.stats..Vertisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Vertisol....tas......Ens.mean..-Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="l) Vertisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Vertisol85_Plot
+
+#### to export individual figures as a pdf
+  #pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change Vertisol8.5.pdf', width = 10, height = 10)
+  #plot(Vertisol85_Plot)
+  #dev.off()
+
+
+
+pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change by soil type8.5.v1.pdf', width = 10, height = 10)
+grid.arrange(Alfisol85_Plot,Andisol85_Plot,Aridisol85_Plot,Entisol85_Plot,Gelisol85_Plot,Histosol85_Plot,Inceptisol85_Plot,Mollisol85_Plot,Oxisol85_Plot,Spodosol85_Plot,Ultisol85_Plot,Vertisol85_Plot, nrow=3)
+dev.off()
+
+
+
+```
+
+
+
+
+Plots of tas, tsl0.01 and tsl 1.0 WITH sd ribbon for tsl1.0
+```{r}
+
+Alfisol85_Plot<-ggplot(Alfisol, aes(x=Row.names))+
+    geom_ribbon(aes(ymin=Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Alfisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Alfisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tas......Ens.mean.., color="Annualts.ens.stats..Alfisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="a) Alfisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position=c(0.3,0.8), legend.title = element_blank(), axis.title.x = element_blank(),
+        axis.text.x = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Alfisol85_Plot
+
+Andisol85_Plot<-ggplot(Andisol, aes(x=Row.names))+
+   geom_ribbon(aes(ymin=Annualts.ens.stats..Andisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Andisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Andisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Andisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tas......Ens.mean.., color="Annualts.ens.stats..Andisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="b) Andisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Andisol85_Plot
+
+Aridisol85_Plot<-ggplot(Aridisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Aridisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Aridisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tas......Ens.mean.., color="Annualts.ens.stats..Aridisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="c) Aridisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Aridisol85_Plot
+
+Entisol85_Plot<-ggplot(Entisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Entisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Entisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Entisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Entisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tas......Ens.mean.., color="Annualts.ens.stats..Entisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="d) Entisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Entisol85_Plot
+
+Gelisol85_Plot<-ggplot(Gelisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Gelisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Gelisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tas......Ens.mean.., color="Annualts.ens.stats..Gelisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="e) Gelisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Gelisol85_Plot
+
+Histosol85_Plot<-ggplot(Histosol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Histosol....tsl1.0......Ens.mean..-Annualts.ens.stats..Histosol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Histosol....tsl1.0......Ens.mean..+Annualts.ens.stats..Histosol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tas......Ens.mean.., color="Annualts.ens.stats..Histosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="f) Histosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Histosol85_Plot
+
+Inceptisol85_Plot<-ggplot(Inceptisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Inceptisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Inceptisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tas......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="g) Inceptisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Inceptisol85_Plot
+
+Mollisol85_Plot<-ggplot(Mollisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Mollisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Mollisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tas......Ens.mean.., color="Annualts.ens.stats..Mollisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="h) Mollisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Mollisol85_Plot
+
+Oxisol85_Plot<-ggplot(Oxisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Oxisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Oxisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tas......Ens.mean.., color="Annualts.ens.stats..Oxisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="i) Oxisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none")+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Oxisol85_Plot
+
+Spodosol85_Plot<-ggplot(Spodosol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean..-Annualts.ens.stats..Spodosol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean..+Annualts.ens.stats..Spodosol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tas......Ens.mean.., color="Annualts.ens.stats..Spodosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="j) Spodosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Spodosol85_Plot
+
+Ultisol85_Plot<-ggplot(Ultisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Ultisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Ultisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tas......Ens.mean.., color="Annualts.ens.stats..Ultisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="m) Ultisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Ultisol85_Plot
+
+Vertisol85_Plot<-ggplot(Vertisol, aes(x=Row.names))+
+     geom_ribbon(aes(ymin=Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean..-Annualts.ens.stats..Vertisol....tsl1.0......Ens.sd.., ymax=Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean..+Annualts.ens.stats..Vertisol....tsl1.0......Ens.sd..), fill="red", alpha=0.3)+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tas......Ens.mean.., color="Annualts.ens.stats..Vertisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="l) Vertisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red"))+
+  theme(legend.position="none", axis.title.y = element_blank())+
+  scale_y_continuous(limits=c(0,8))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Vertisol85_Plot
+
+#### to export individual figures as a pdf
+  #pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change Vertisol8.5.pdf', width = 10, height = 10)
+  #plot(Vertisol85_Plot)
+  #dev.off()
+
+
+
+#pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change by soil type8.5_wError.pdf', width = 10, height = 10)
+grid.arrange(Alfisol85_Plot,Andisol85_Plot,Aridisol85_Plot,Entisol85_Plot,Gelisol85_Plot,Histosol85_Plot,Inceptisol85_Plot,Mollisol85_Plot,Oxisol85_Plot,Spodosol85_Plot,Ultisol85_Plot,Vertisol85_Plot, nrow=3)
+#dev.off()
+
+
+
+```
+
+
+
+
+
+
+Organize data for each soil order file in the csvs folder so that we can make plots of tas, tsl0.01 and tsl1.0 over the 21st century 
+** FOR RCP4.5
+
+```{r}
+#load Annual tas files for RCP4.5 for each soil order
+Entisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsEntisol45_JS.csv", header=TRUE)
+Inceptisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsInceptisol45_JS.csv", header=TRUE)
+Alfisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAlfisol45_JS.csv", header=TRUE)
+Mollisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsMollisol45_JS.csv", header=TRUE)
+Ultisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsUltisol45_JS.csv", header=TRUE)
+Aridisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAridisol45_JS.csv", header=TRUE)
+Vertisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsVertisol45_JS.csv", header=TRUE)
+Oxisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsOxisol45_JS.csv", header=TRUE)
+Andisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsAndisol45_JS.csv", header=TRUE)
+Spodosol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsSpodosol45_JS.csv", header=TRUE)
+Histosol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsHistosol45_JS.csv", header=TRUE)
+Gelisol4.5=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvsGelisol45_JS.csv", header=TRUE)
+
+```
+
+
+Plots of tas, tsl0.01 and tsl 1.0 with air-soil offset (RCP4.5)
+```{r}
+
+Alfisol45_Plot<-ggplot(Alfisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tas......Ens.mean.., color="Annualts.ens.stats..Alfisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean.."))+
+    geom_line(aes(y=(Annualts.ens.stats..Alfisol....tas......Ens.mean..-Annualts.ens.stats..Alfisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="a) Alfisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm", "Air - Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position=c(0.5,0.8), legend.title = element_blank(), axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Alfisol45_Plot
+
+Andisol45_Plot<-ggplot(Andisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tas......Ens.mean.., color="Annualts.ens.stats..Andisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Andisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Andisol....tas......Ens.mean..-Annualts.ens.stats..Andisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="b) Andisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Andisol45_Plot
+
+Aridisol45_Plot<-ggplot(Aridisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tas......Ens.mean.., color="Annualts.ens.stats..Aridisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Aridisol....tas......Ens.mean..-Annualts.ens.stats..Aridisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="c) Aridisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Aridisol45_Plot
+
+Entisol45_Plot<-ggplot(Entisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tas......Ens.mean.., color="Annualts.ens.stats..Entisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Entisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Entisol....tas......Ens.mean..-Annualts.ens.stats..Entisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="d) Entisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Entisol45_Plot
+
+Gelisol45_Plot<-ggplot(Gelisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tas......Ens.mean.., color="Annualts.ens.stats..Gelisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Gelisol....tas......Ens.mean..-Annualts.ens.stats..Gelisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="e) Gelisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Gelisol45_Plot
+
+Histosol45_Plot<-ggplot(Histosol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tas......Ens.mean.., color="Annualts.ens.stats..Histosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Histosol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Histosol....tas......Ens.mean..-Annualts.ens.stats..Histosol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="f) Histosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Histosol45_Plot
+
+Inceptisol45_Plot<-ggplot(Inceptisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tas......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Inceptisol....tas......Ens.mean..-Annualts.ens.stats..Inceptisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="g) Inceptisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Inceptisol45_Plot
+
+Mollisol45_Plot<-ggplot(Mollisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tas......Ens.mean.., color="Annualts.ens.stats..Mollisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean.."))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="h) Mollisol")+theme_bw()+
+      geom_line(aes(y=(Annualts.ens.stats..Mollisol....tas......Ens.mean..-Annualts.ens.stats..Mollisol....tsl1.0......Ens.mean..), color="grey"))+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red", "grey"))+
+  theme(legend.position="none", axis.title.x = element_blank(),
+        axis.text.x = element_blank(), axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Mollisol45_Plot
+
+Oxisol45_Plot<-ggplot(Oxisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tas......Ens.mean.., color="Annualts.ens.stats..Oxisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Oxisol....tas......Ens.mean..-Annualts.ens.stats..Oxisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="i) Oxisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none",text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Oxisol45_Plot
+
+Spodosol45_Plot<-ggplot(Spodosol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tas......Ens.mean.., color="Annualts.ens.stats..Spodosol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Spodosol....tas......Ens.mean..-Annualts.ens.stats..Spodosol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="j) Spodosol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Spodosol45_Plot
+
+Ultisol45_Plot<-ggplot(Ultisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tas......Ens.mean.., color="Annualts.ens.stats..Ultisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Ultisol....tas......Ens.mean..-Annualts.ens.stats..Ultisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="m) Ultisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Ultisol45_Plot
+
+Vertisol45_Plot<-ggplot(Vertisol4.5, aes(x=Row.names))+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tas......Ens.mean.., color="Annualts.ens.stats..Vertisol....tas......Ens.mean.."))+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl0.01......Ens.mean.."))+  
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.., color="Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean.."))+
+      geom_line(aes(y=(Annualts.ens.stats..Vertisol....tas......Ens.mean..-Annualts.ens.stats..Vertisol....tsl1.0......Ens.mean..), color="grey"))+
+  labs(x="Year", y=bquote("Temperature change (C)"),title="l) Vertisol")+theme_bw()+
+  scale_color_manual(labels=c("Air", "Soil 1 cm", "Soil 100 cm"), values= c("black","blue","red","grey"))+
+  theme(legend.position="none", axis.title.y = element_blank(),text = element_text(size=16))+
+  scale_y_continuous(limits=c(0,5))
+  #theme(legend.position=c(0.2,0.85)) +
+  #theme(legend.title=element_blank())+  theme(text = element_text(size=15))
+Vertisol45_Plot
+
+#### to export individual figures as a pdf
+  #pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change Vertisol4.5.pdf', width = 10, height = 10)
+  #plot(Vertisol45_Plot)
+  #dev.off()
+
+
+
+pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Temp change by soil type4.5.v1.pdf', width = 10, height = 10)
+grid.arrange(Alfisol45_Plot,Andisol45_Plot,Aridisol45_Plot,Entisol45_Plot,Gelisol45_Plot,Histosol45_Plot,Inceptisol45_Plot,Mollisol45_Plot,Oxisol45_Plot,Spodosol45_Plot,Ultisol45_Plot,Vertisol45_Plot, nrow=3)
+dev.off()
+
+
+
+```
+
+
+
+
+
+Make plot of Ens.mean mrsl (soil moisture at 10 cm) +/- standard deviation (1 or 2?)
+
+```{r}
+
+
+# Plots
+Alfisolmrlsl<-ggplot(Alfisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Alfisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Alfisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Alfisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Alfisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Alfisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="a) Alfisol")+theme_bw()+
+  theme(legend.title=element_blank())+  theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())+scale_y_continuous(limits=c(-30,15))
+Alfisolmrlsl
+
+Andisolmrlsl<-ggplot(Andisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Andisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Andisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Andisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Andisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Andisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="b) Andisol")+theme_bw()+
+  theme(legend.title=element_blank())+  theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Andisolmrlsl
+
+Aridisolmrlsl<-ggplot(Aridisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Aridisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Aridisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Aridisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Aridisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Aridisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="c) Aridisol")+theme_bw()+
+  theme(legend.title=element_blank())+theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Aridisolmrlsl
+
+Entisolmrlsl<-ggplot(Entisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Entisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Entisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Entisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Entisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Entisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="d) Entisol")+theme_bw()+
+  theme(legend.title=element_blank())+ theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Entisolmrlsl
+
+Gelisolmrlsl<-ggplot(Gelisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Gelisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Gelisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Gelisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Gelisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Gelisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="e) Gelisol")+theme_bw()+
+  theme(legend.title=element_blank())+ theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Gelisolmrlsl
+
+Histosolmrlsl<-ggplot(Histosol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Histosol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Histosol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Histosol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Histosol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Histosol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="f) Histosol")+theme_bw()+
+  theme(legend.title=element_blank())+ theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Histosolmrlsl
+
+
+Inceptisolmrlsl<-ggplot(Inceptisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Inceptisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Inceptisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Inceptisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Inceptisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Inceptisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="g) Inceptisol")+theme_bw()+
+  theme(legend.title=element_blank())+theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Inceptisolmrlsl
+
+Mollisolmrlsl<-ggplot(Mollisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Mollisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Mollisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Mollisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Mollisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Mollisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="h) Mollisol")+theme_bw()+
+  theme(legend.title=element_blank())+theme(text = element_text(size=15))+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Mollisolmrlsl
+
+Oxisolmrlsl<-ggplot(Oxisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Oxisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Oxisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Oxisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Oxisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Oxisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="i) Oxisol")+theme_bw()+
+  theme(legend.title=element_blank())+theme(text = element_text(size=15))+
+  scale_y_continuous(limits=c(-30,15))
+
+Oxisolmrlsl
+
+Spodosolmrlsl<-ggplot(Spodosol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Spodosol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Spodosol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Spodosol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Spodosol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Spodosol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="j) Spodosol")+theme_bw()+
+  theme(legend.title=element_blank())+ theme(text = element_text(size=15))+
+  theme(axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Spodosolmrlsl
+
+Ultisolmrlsl<-ggplot(Ultisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Ultisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Ultisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Ultisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Ultisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Ultisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="k) Ultisol")+theme_bw()+
+  theme(legend.title=element_blank())+  theme(text = element_text(size=15))+
+  theme(axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Ultisolmrlsl
+
+Vertisolmrlsl<-ggplot(Vertisol, aes(x=Row.names))+
+  geom_ribbon(aes(ymin=Annualts.ens.stats..Vertisol....mrlsl0.1......Ens.mean..-Annualts.ens.stats..Vertisol....mrlsl0.1......Ens.sd.., ymax=Annualts.ens.stats..Vertisol....mrlsl0.1......Ens.mean..+Annualts.ens.stats..Vertisol....mrlsl0.1......Ens.sd..), fill="grey80")+
+  geom_line(aes(y=Annualts.ens.stats..Vertisol....mrlsl0.1......Ens.mean..))+
+  labs(x="Year", y=bquote("Soil moisture change (kg m" ^-3* ")"),title="l) Vertisol")+theme_bw()+
+  theme(legend.title=element_blank())+  theme(text = element_text(size=15))+
+  theme(axis.title.y = element_blank())+scale_y_continuous(limits=c(-30,15))
+
+Vertisolmrlsl
+
+
+pdf('/Volumes/cmip5_soils/regridcmip5soildata/Analysis/Figures/final-figs/Moisture change by soil type4.5.pdf', width = 10, height = 10)
+grid.arrange(Alfisolmrlsl,Andisolmrlsl,Aridisolmrlsl,Entisolmrlsl,Gelisolmrlsl,Histosolmrlsl,Inceptisolmrlsl,Mollisolmrlsl,Oxisolmrlsl,Spodosolmrlsl,Ultisolmrlsl,Vertisolmrlsl, nrow=3)
+dev.off()
+
+
+
+```
+
+
+
+Calculate ANOVA for EOC temperature change to see if tsl is sig diff from tas
+
+```{r}
+library(tidyr)
+
+# Load EOC files
+EOC85tas<-read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp85.EOC.tas.csv", header=TRUE)
+colnames(EOC85tas)[1]<-"Soil"
+Globaltas85<-EOC85tas[1,]
+
+EOC85tsl0.01=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp85.EOC.tsl0.01.csv", header=TRUE)
+colnames(EOC85tsl0.01)[1]<-"Soil"
+Globaltsl0.0185<-EOC85tsl0.01[1,]
+
+EOC85tsl1.0=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp85.EOC.tsl1.0.csv", header=TRUE)
+colnames(EOC85tsl1.0)[1]<-"Soil"
+Globaltsl1.085<-EOC85tsl1.0[1,]
+
+
+EOC45tas=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp45.EOC.tas.csv", header=TRUE)
+colnames(EOC45tas)[1]<-"Soil"
+Globaltas45<-EOC45tas[1,]
+
+EOC45tsl0.01=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp45.EOC.tsl0.01.csv", header=TRUE)
+colnames(EOC45tsl0.01)[1]<-"Soil"
+Globaltsl0.0145<-EOC45tsl0.01[1,]
+
+EOC45tsl1.0=read.csv("/Volumes/cmip5_soils/regridcmip5soildata/Analysis/csvs/rcp45.EOC.tsl1.0.csv", header=TRUE)
+colnames(EOC45tsl1.0)[1]<-"Soil"
+Globaltsl1.045<-EOC45tsl1.0[1,]
+
+
+# Convert data from wide to long format
+Global85tas_long<-Globaltas85 %>% gather(Soil, value)
+  Global85tas_long$Soil<-as.factor(Global85tas_long$Soil)
+Global85tsl0.01_long<-Globaltsl0.0185 %>% gather(Soil, value)
+  Global85tsl0.01_long$Soil<-as.factor(Global85tsl0.01_long$Soil)
+Global85tsl1.0_long<-Globaltsl1.085 %>% gather(Soil, value)
+  Global85tsl1.0_long$Soil<-as.factor(Global85tsl1.0_long$Soil)
+  
+
+Global45tas_long<-Globaltas45 %>% gather(Soil, value)
+  Global45tas_long$Soil<-as.factor(Global45tas_long$Soil)
+Global45tsl0.01_long<-Globaltsl0.0145 %>% gather(Soil, value)
+  Global45tsl0.01_long$Soil<-as.factor(Global45tsl0.01_long$Soil)
+Global45tsl1.0_long<-Globaltsl1.045 %>% gather(Soil, value)
+  Global45tsl1.0_long$Soil<-as.factor(Global45tsl1.0_long$Soil)
+ 
+# merge
+Globaltemp_85<-cbind(Global85tas_long,Global85tsl0.01_long$value,Global85tsl1.0_long$value)
+colnames(Globaltemp_85)<-c("Model","tas","tsl0.01","tsl1.0")
+str(Globaltemp_85)
+Globaltemp_85a<-gather(Globaltemp_85, Model, value)
+
+Globaltemp_45<-cbind(Global45tas_long,Global45tsl0.01_long$value,Global45tsl1.0_long$value)
+colnames(Globaltemp_45)<-c("Model","tas","tsl0.01","tsl1.0")
+str(Globaltemp_45)
+Globaltemp_45a<-gather(Globaltemp_45, Model, value)
+
+#Anova for RCP8.5
+tas_tsl<-lm(value~Model, data=Globaltemp_85a)
+anova(tas_tsl)  # p=0.5568
+
+#Anova for RCP4.5
+tas_tsl4.5<-lm(value~Model, data=Globaltemp_45a)
+anova(tas_tsl4.5)  # p=0.6532
+
+```
+
+
+
