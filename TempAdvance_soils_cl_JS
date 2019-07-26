@@ -1,0 +1,517 @@
+---
+title: "Temperature Advance - Soil specific"
+output: html_notebook
+---
+
+Creates temperature advance plots for each CMIP5 ensemble member and soil order, plus ensemble.   
+Bash output is from regridcmip5soildata/Scripts/SoilTempAdvance_cl.sh. 
+
+```{r}
+# Initialization
+rm(list=ls())
+library(RNetCDF)
+library(ncdf4)
+library(fields)
+library(abind)
+
+# Load in key functions
+source("/Volumes/cmip5_soils/regridcmip5soildata/Scripts/TempAdvanceFunctions.R")
+
+MODEL=c("bcc-csm1-1","BNU-ESM","CanESM2","CESM1-BGC","GFDL-ESM2G","GISS-E2-R","HadGEM2-ES","inmcm4","IPSL-CM5A-LR","MIROC5","MPI-ESM-LR","MRI-CGCM3","NorESM1-M","CCSM4")
+ #MODEL2 is missing HadGEM2-ES because it was causing problems in the third code chunk
+MODEL2=c("bcc-csm1-1","BNU-ESM","CanESM2","CESM1-BGC","GFDL-ESM2G","GISS-E2-R","inmcm4","IPSL-CM5A-LR","MIROC5","MPI-ESM-LR","MRI-CGCM3","NorESM1-M","CCSM4")
+XP=c("rcp45")
+REAL="r1i1p1"
+WD1="/Volumes/cmip5_soils/regridcmip5soildata/"
+VAR=c("tsl")
+
+#WD2 <- "/Volumes/cmip5_soils/regridcmip5soildata/Analysis/SeasonAdvance/"
+SOIL<-c("Rock", "ShiftingSand", "Gelisol","Histosol","Spodosol","Andisol","Oxisol","Vertisol","Aridisol","Ultisol","Mollisol","Alfisol","Inceptisol","Entisol")
+
+SOIL2<-c("Rock", "ShiftingSand", "Gelisol","Histosol","Spodosol","Andisol","Oxisol","Vertisol","Aridisol","Ultisol","Mollisol","Alfisol","Inceptisol","Entisol","Global")
+NLON=288
+NLAT=192
+
+# Code to open a netcdf file and extract variable: 
+#data.nc<-open.nc(ncfile)
+# out_data<-var.get.nc(data.nc,"tsl")
+# Andisol case 
+data.nc <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tsl_bcc-csm1-1_rcp85_208101-210012_Andisol_ts_daily.nc")
+var <- var.get.nc(data.nc,"tsl")
+data.nc <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tas_bcc-csm1-1_rcp85_208101-210012_Andisol_ts_daily.nc")
+var2 <- var.get.nc(data.nc,"tas")
+data <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tsl_bcc-csm1-1_198601-200512_Andisol_ts_daily.nc")
+var3 <- var.get.nc(data,"tsl")
+
+
+{plot(1:335,var3[1,])
+plot(1:335,var[1,])
+plot(1:335,var2)}   #X axis= DOY, Y axis = temp in Kelvin
+
+# Gelisol case 
+data.nc <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tsl_bcc-csm1-1_rcp85_208101-210012_Gelisol_ts_daily.nc")
+var <- var.get.nc(data.nc,"tsl")
+data.nc <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tas_bcc-csm1-1_rcp85_208101-210012_Gelisol_ts_daily.nc")
+var2 <- var.get.nc(data.nc,"tas")
+data <- open.nc("/Volumes/cmip5_soils/regridcmip5soildata/OUT3/bcc-csm1-1/tsl_bcc-csm1-1_198601-200512_Gelisol_ts_daily.nc")
+var3 <- var.get.nc(data,"tsl")
+
+
+{plot(1:335,var3[1,])
+plot(1:335,var[1,])
+plot(1:335,var2)}   #X axis= DOY, Y axis = temp in Kelvin
+```
+
+Load data of historical and EOC daily soil values. Data is bash output of Scripts/SoilTempAdvance_cl.sh and is a global soil area-weighted average over either historical or EOC period. 
+
+```{r}
+## Load Data, Interpolate to 365 Days and 0.01, 0.1, 1m soil depths; save in Analysis/RData folder
+## Code chunk from TempAdvance_soils_cl.Rmd  0301019 attempt to code in 'Case 3' when Hist tsl crosses 10C threshold, but EOC temps are always above it (rather than Case 1 when Hist tsl
+#  never crosses 10C threshold, but EOC does)
+soilArray <- array(data=NA,dim=c(length(MODEL),length(XP),length(SOIL)+1,3,4),dimnames=list(MODEL,XP,c(SOIL,"Global"),c("tsl0.01m","tas","SoilMinusAir"),c("Advance","Case1","Case2", "Case3")))
+
+for (m in 1:length(MODEL)){
+  for (x in 1:length(XP)){
+    
+    # Global calculations 
+    tsl.glob.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_198601-200512_ts_daily.nc"),"soil")
+    tsl.glob.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_",XP[x],"_2081-2100_ts_daily.nc"),"soil")
+    tas.glob.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_198601-200512_ts_daily.nc"),"tasSoil")
+    tas.glob.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_",XP[x],"_2081-2100_ts_daily.nc"),"tasSoil")
+    
+    tslGlobHist10C <- min(which(tsl.glob.hist>283.15))
+    tslGlobEOC10C <- min(which(tsl.glob.eoc>283.15))
+    tasGlobHist10C <- min(which(tas.glob.hist>283.15))
+    tasGlobEOC10C <- min(which(tas.glob.eoc>283.15))
+    
+    # Temp Advance
+    # +999 = True; -999= False
+    if (is.infinite(tslGlobHist10C) && !(is.infinite(tslGlobEOC10C))){ # Case 1 tsl 
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case1"]<- 999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Advance"]<- NA 
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case2"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case3"]<- -999
+    } else if (!(is.infinite(tslGlobHist10C)) && (is.infinite(tslGlobEOC10C))){ # Case 2
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case1"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Advance"]<- NA
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case2"]<- 999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case3"]<- -999
+    } else if (!(is.infinite(tslGlobHist10C)) && !(is.infinite(tslGlobEOC10C)) && tslGlobEOC10C==1 && tslGlobHist10C >1){ # Case 3
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case1"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Advance"]<- NA
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case2"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case3"]<- 999
+    } else if (!(is.infinite(tslGlobHist10C)) && !(is.infinite(tslGlobEOC10C))){ # Normal case
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case1"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Advance"]<- tslGlobHist10C - tslGlobEOC10C
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case2"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Case3"]<- -999
+    }
+    
+    if (is.infinite(tasGlobHist10C) && !(is.infinite(tasGlobEOC10C))){ # Case 1 tas 
+      soilArray[MODEL[m],XP[x],"Global","tas","Case1"]<- 999
+      soilArray[MODEL[m],XP[x],"Global","tas","Advance"]<- NA 
+      soilArray[MODEL[m],XP[x],"Global","tas","Case2"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tas","Case3"]<- -999
+      } else if (!(is.infinite(tasGlobHist10C)) && (is.infinite(tasGlobEOC10C))){
+      soilArray[MODEL[m],XP[x],"Global","tas","Case1"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tas","Advance"]<- NA
+      soilArray[MODEL[m],XP[x],"Global","tas","Case2"]<- 999
+      soilArray[MODEL[m],XP[x],"Global","tas","Case3"]<- -999
+    } else if (!(is.infinite(tasGlobHist10C)) && !(is.infinite(tasGlobEOC10C)) && tasGlobEOC10C==1 && tasGlobHist10C >1){ # Case 3 tas 
+      soilArray[MODEL[m],XP[x],"Global","tas","Case1"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tas","Advance"]<- NA 
+      soilArray[MODEL[m],XP[x],"Global","tas","Case2"]<- -999
+      soilArray[MODEL[m],XP[x],"Global","tas","Case3"]<- 999
+    }else if (!(is.infinite(tasGlobHist10C)) && !(is.infinite(tasGlobEOC10C))){
+        soilArray[MODEL[m],XP[x],"Global","tas","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],"Global","tas","Advance"]<- tasGlobHist10C - tasGlobEOC10C
+        soilArray[MODEL[m],XP[x],"Global","tas","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],"Global","tas","Case3"]<- -999
+    } 
+    
+  # Soil minus air 
+    if (!(is.na(soilArray[MODEL[m],XP[x],"Global","tsl0.01m","Advance"])) && !(is.na(soilArray[MODEL[m],XP[x],"Global","tas","Advance"]))){
+      soilArray[MODEL[m],XP[x],"Global","SoilMinusAir","Advance"]<- (tslGlobHist10C - tslGlobEOC10C) - (tasGlobHist10C - tasGlobEOC10C)
+    }else{
+      soilArray[MODEL[m],XP[x],"Global","SoilMinusAir","Advance"]<- NA 
+    }
+    
+    # Soil specific calculations 
+    for (i in 1:length(SOIL)){
+      
+      # Step 1: Load and interpolate soil depths for historical and EOC, RCP files 
+      soil.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_198601-200512_",SOIL[i],"_ts_daily.nc"),"soil")
+      soil.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL[i],"_ts_daily.nc"),"soil")
+      tas.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_198601-200512_",SOIL[i],"_ts_daily.nc"),"tasSoil")
+      tas.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL[i],"_ts_daily.nc"),"tasSoil")
+      
+      # Step 2: Compute temperature threshold and temp advance for tas and tsl
+      # 2a. Temperature Thresholds #min() finds first DOY that temp crosses above 283.15 K threshold
+      
+      tslHist10C <-  min(which(soil.hist>283.15))
+      tasHist10C <-  min(which(tas.hist>283.15))
+      tslEOC10C <- min(which(soil.eoc>283.15))
+      tasEOC10C<-  min(which(tas.eoc>283.15))
+      
+      
+      # 2b. Temp Advance
+      if (is.infinite(tslHist10C) && !(is.infinite(tslEOC10C))){ # Case 1 tsl 
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case1"]<- 999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"]<- NA 
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case3"]<- -999
+      } else if (!(is.infinite(tslHist10C)) && (is.infinite(tslEOC10C))){
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"]<- NA
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case2"]<- 999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case3"]<- -999
+      }else if (!(is.infinite(tslHist10C)) && !(is.infinite(tslEOC10C)) && tslEOC10C==1 && tslHist10C >1){ # Case 3
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"]<- NA
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case3"]<- 999
+      }else if (!(is.infinite(tslHist10C)) && !(is.infinite(tslEOC10C))){
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"]<- tslHist10C - tslEOC10C
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case3"]<- -999
+      } else if (is.infinite(tslHist10C) && is.infinite(tslEOC10C)){ # Case 4: Both below threshold
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"]<- NA
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Case3"]<- -999
+
+        }
+      
+      if (is.infinite(tasHist10C) && !(is.infinite(tasEOC10C))){ # Case 1 tas
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case1"]<- 999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Advance"]<- NA 
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case3"]<- -999
+      } else if (!(is.infinite(tasHist10C)) && (is.infinite(tasEOC10C))){  #Case 2 tas
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Advance"]<- NA
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case2"]<- 999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case3"]<- -999
+      }else if (!(is.infinite(tasHist10C)) && !(is.infinite(tasEOC10C)) && tasEOC10C==1 && tasHist10C >1){ # Case 3 tas 
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Advance"]<- NA 
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case3"]<- 999
+      } else if (!(is.infinite(tasHist10C)) && !(is.infinite(tasEOC10C))){  # Normal case
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case1"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Advance"]<- tasHist10C - tasEOC10C
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case2"]<- -999
+        soilArray[MODEL[m],XP[x],SOIL[i],"tas","Case3"]<- -999
+      }
+      
+      
+      if (!(is.na(soilArray[MODEL[m],XP[x],SOIL[i],"tsl0.01m","Advance"])) && !(is.na(soilArray[MODEL[m],XP[x],SOIL[i],"tas","Advance"]))){
+        soilArray[MODEL[m],XP[x],SOIL[i],"SoilMinusAir","Advance"]<- (tslHist10C - tslEOC10C) - (tasHist10C - tasEOC10C)
+      }else{
+        soilArray[MODEL[m],XP[x],SOIL[i],"SoilMinusAir","Advance"]<- NA 
+      }
+
+  } # End SOIL Loop
+  # Save Soil Array
+  save(soilArray,file = paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvanceData_wCase3.Rdata"))
+  } # End XP loop
+} # End MODEL Loop
+
+# to access soil array: 
+# load(paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvanceData_wCase3.Rdata"))
+# will open all objects stored in the Rdata file in your environment (in this case, soilArray)
+
+#soilArray.ens[,,"tsl0.01m",c("Ens.mean","Ens.sd")]
+```
+
+
+This chunk will output daily tsl and tas values for HIST and EOC for each of the models. We've set it up to calculate these values for each of the 14 soil orders and ouput a csv file for each soil orders. I will use this data to make plots of tsl (and tas) for HIST and EOC to show the shift in the daily values. I will need to calculate ensemble mean values (i think this is not done yet??) to make these figs, and also to calculate shift in the height of the yearly max temp and shif in the timing of the max temp. 
+I can also use the # lines below to pull out hist and eoc mean temps (like from Fig 2)! 
+** note: we're only running this for RCP 8.5  ... MAKE SURE XP IN LINE 23 IS SET TO RCP 8.5
+- JS 03/11/2019
+```{r}
+# Array to store values 
+soilTS<- array(data=NA,dim=c(length(MODEL2),length(XP),length(SOIL2),2,2,365),dimnames=list(MODEL2,XP,c(SOIL,"Global"),c("tsl0.01m","tas"),c("hist","EOC"),1:365))
+soilDF <- data.frame()
+
+for (i in 1:length(SOIL2)){
+  #for (x in 1:length(XP)){
+    for (m in 1:length(MODEL2)){
+     #for (m in c(1:13)){
+     #  soil.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     # soil.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     #  tas.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+     #  tas.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+     # 
+     #  
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tsl0.01m","hist",]<- soil.hist
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tas","hist",]<- tas.hist
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tsl0.01m","EOC",]<- soil.eoc
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tas","EOC",]<- tas.eoc
+       
+      soil.hist <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tsl_",MODEL2[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     soil.eoc <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tsl_",MODEL2[m],"_","rcp85","_208101-210012_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+      tas.hist <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tas_",MODEL2[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+      tas.eoc <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tas_",MODEL2[m],"_","rcp85","_208101-210012_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+
+
+      soilTS[MODEL2[m],"rcp85",SOIL2[i],"tsl0.01m","hist",]<- soil.hist
+      soilTS[MODEL2[m],"rcp85",SOIL2[i],"tas","hist",]<- tas.hist
+      soilTS[MODEL2[m],"rcp85",SOIL2[i],"tsl0.01m","EOC",]<- soil.eoc
+      soilTS[MODEL2[m],"rcp85",SOIL2[i],"tas","EOC",]<- tas.eoc
+
+      
+    }
+  #}
+
+# View(soilTS[,1,1,"tsl0.01m","hist",]) # to see all models for 'tsl0.01m hist' option ... can do for "EOC" and "tas" options too
+  
+  
+  library(dplyr)
+  library(reshape2)
+  #df_tsl <- data.frame(soilTS[,XP[x],SOIL2[i],"tsl0.01m","hist",]) 
+  df_tsl <- data.frame(soilTS[,"rcp85",SOIL2[i],"tsl0.01m","hist",]) 
+  model_names <- data.frame(model=row.names(df_tsl))
+  df_tsl <- cbind(model_names,df_tsl)
+  df_tsl <- df_tsl %>% mutate(period="hist")
+
+  #df_tsl_2 <- data.frame(soilTS[,XP[x],SOIL2[i],"tsl0.01m","EOC",])
+  df_tsl_2 <- data.frame(soilTS[,"rcp85",SOIL2[i],"tsl0.01m","EOC",])
+  model_names <- data.frame(model=row.names(df_tsl_2))
+  df_tsl_2 <- cbind(model_names,df_tsl_2)
+  df_tsl_2 <- df_tsl_2 %>% mutate(period="EOC")
+
+  df_out <- rbind(df_tsl,df_tsl_2) %>% melt(id.vars=c("model","period")) 
+  df_out$variable<- as.character(df_out$variable)
+  df_out$day<- as.numeric(gsub("X","",df_out$variable))
+  df_out <- df_out %>% select(-variable)
+  
+  write.csv(df_out,paste0(WD1,"Analysis/SeasonAdvance/tsl_rcp85_",SOIL2[i],"_Daily.csv"),row.names=F)
+  # Change for air 
+  
+  df_tas <- data.frame(soilTS[,"rcp85",SOIL2[i],"tas","hist",]) 
+  model_names <- data.frame(model=row.names(df_tas))
+  df_tas <- cbind(model_names,df_tas)
+  df_tas <- df_tas %>% mutate(period="hist")
+
+  df_tas_2 <- data.frame(soilTS[,"rcp85",SOIL2[i],"tas","EOC",])
+  model_names <- data.frame(model=row.names(df_tas_2))
+  df_tas_2 <- cbind(model_names,df_tas_2)
+  df_tas_2 <- df_tas_2 %>% mutate(period="EOC")
+
+  df_out2 <- rbind(df_tsl,df_tsl_2) %>% melt(id.vars=c("model","period")) 
+  df_out2$variable<- as.character(df_out2$variable)
+  df_out2$day<- as.numeric(gsub("X","",df_out2$variable))
+  df_out2 <- df_out2 %>% select(-variable)
+  
+  write.csv(df_out2,paste0(WD1,"Analysis/SeasonAdvance/tas_rcp85_",SOIL2[i],"_Daily.csv"),row.names=F)
+
+}
+
+
+save(soilTS,file=paste0(WD1,"Analysis/SeasonAdvance/DailySoilTS.Rdata"))
+
+# ******* Find mean, minimum, maximum across models (ensemble) for hist and eoc ****
+#Ens.max.example <- max(soilTS[,1,"Andisol","tsl0.01m","hist",1:365], na.rm=T)
+#Ens.max.eoc.ex <- max(soilTS[,1,"Andisol","tsl0.01m","EOC",1:365], na.rm=T)
+#Ens.mean.eoc.ex <- mean(soilTS[,1,"Andisol","tsl0.01m","EOC",1:365], na.rm=T)
+#Ens.mean.hist.ex <- mean(soilTS[,1,"Andisol","tsl0.01m","hist",1:365], na.rm=T)
+
+```
+
+
+
+This chunk will output daily tsl and tas values for HIST and EOC for each of the models. We've set it up to calculate these values for each of the 14 soil orders and ouput a csv file for each soil orders. I will use this data to make plots of tsl (and tas) for HIST and EOC to show the shift in the daily values. I will need to calculate ensemble mean values (i think this is not done yet??) to make these figs, and also to calculate shift in the height of the yearly max temp and shif in the timing of the max temp. 
+I can also use the # lines below to pull out hist and eoc mean temps (like from Fig 2)! 
+** note: we're only running this for RCP 4.5 HERE... CHANGE THE XP IN LINE 23 ABOVE TO RUN THIS CHUNK SO IT IS FOR 4.5 
+- JS 03/11/2019
+```{r}
+# Array to store values 
+soilTS<- array(data=NA,dim=c(length(MODEL2),length(XP),length(SOIL2),2,2,365),dimnames=list(MODEL2,XP,c(SOIL,"Global"),c("tsl0.01m","tas"),c("hist","EOC"),1:365))
+soilDF <- data.frame()
+
+for (i in 1:length(SOIL2)){
+  #for (x in 1:length(XP)){
+    for (m in 1:length(MODEL2)){
+     #for (m in c(1:13)){
+     #  soil.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     # soil.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tsl_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     #  tas.hist <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+     #  tas.eoc <- interpolateToDaily(MODEL[m],paste0(WD1,"OUT3/",MODEL[m],"/","tas_",MODEL[m],"_",XP[x],"_208101-210012_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+     # 
+     #  
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tsl0.01m","hist",]<- soil.hist
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tas","hist",]<- tas.hist
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tsl0.01m","EOC",]<- soil.eoc
+     #  soilTS[MODEL[m],XP[x],SOIL2[i],"tas","EOC",]<- tas.eoc
+       
+      soil.hist <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tsl_",MODEL2[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+     soil.eoc <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tsl_",MODEL2[m],"_","rcp45","_208101-210012_",SOIL2[i],"_ts_daily.nc"),"soil")  #creates 'Data' object
+      tas.hist <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tas_",MODEL2[m],"_198601-200512_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+      tas.eoc <- interpolateToDaily(MODEL2[m],paste0(WD1,"OUT3/",MODEL2[m],"/","tas_",MODEL2[m],"_","rcp45","_208101-210012_",SOIL2[i],"_ts_daily.nc"),"tasSoil") #creates 'Values' object
+
+
+      soilTS[MODEL2[m],"rcp45",SOIL2[i],"tsl0.01m","hist",]<- soil.hist
+      soilTS[MODEL2[m],"rcp45",SOIL2[i],"tas","hist",]<- tas.hist
+      soilTS[MODEL2[m],"rcp45",SOIL2[i],"tsl0.01m","EOC",]<- soil.eoc
+      soilTS[MODEL2[m],"rcp45",SOIL2[i],"tas","EOC",]<- tas.eoc
+
+      
+    }
+  #}
+
+# View(soilTS[,1,1,"tsl0.01m","hist",]) # to see all models for 'tsl0.01m hist' option ... can do for "EOC" and "tas" options too
+  
+  
+  library(dplyr)
+  library(reshape2)
+  #df_tsl <- data.frame(soilTS[,XP[x],SOIL2[i],"tsl0.01m","hist",]) 
+  df_tsl <- data.frame(soilTS[,"rcp45",SOIL2[i],"tsl0.01m","hist",]) 
+  model_names <- data.frame(model=row.names(df_tsl))
+  df_tsl <- cbind(model_names,df_tsl)
+  df_tsl <- df_tsl %>% mutate(period="hist")
+
+  #df_tsl_2 <- data.frame(soilTS[,XP[x],SOIL2[i],"tsl0.01m","EOC",])
+  df_tsl_2 <- data.frame(soilTS[,"rcp45",SOIL2[i],"tsl0.01m","EOC",])
+  model_names <- data.frame(model=row.names(df_tsl_2))
+  df_tsl_2 <- cbind(model_names,df_tsl_2)
+  df_tsl_2 <- df_tsl_2 %>% mutate(period="EOC")
+
+  df_out <- rbind(df_tsl,df_tsl_2) %>% melt(id.vars=c("model","period")) 
+  df_out$variable<- as.character(df_out$variable)
+  df_out$day<- as.numeric(gsub("X","",df_out$variable))
+  df_out <- df_out %>% select(-variable)
+  
+  write.csv(df_out,paste0(WD1,"Analysis/SeasonAdvance/tsl_rcp45_",SOIL2[i],"_Daily.csv"),row.names=F)
+  # Change for air 
+  
+  df_tas <- data.frame(soilTS[,"rcp45",SOIL2[i],"tas","hist",]) 
+  model_names <- data.frame(model=row.names(df_tas))
+  df_tas <- cbind(model_names,df_tas)
+  df_tas <- df_tas %>% mutate(period="hist")
+
+  df_tas_2 <- data.frame(soilTS[,"rcp45",SOIL2[i],"tas","EOC",])
+  model_names <- data.frame(model=row.names(df_tas_2))
+  df_tas_2 <- cbind(model_names,df_tas_2)
+  df_tas_2 <- df_tas_2 %>% mutate(period="EOC")
+
+  df_out2 <- rbind(df_tsl,df_tsl_2) %>% melt(id.vars=c("model","period")) 
+  df_out2$variable<- as.character(df_out2$variable)
+  df_out2$day<- as.numeric(gsub("X","",df_out2$variable))
+  df_out2 <- df_out2 %>% select(-variable)
+  
+  write.csv(df_out2,paste0(WD1,"Analysis/SeasonAdvance/tas_rcp45_",SOIL2[i],"_Daily.csv"),row.names=F)
+
+}
+
+
+#save(soilTS,file=paste0(WD1,"Analysis/SeasonAdvance/DailySoilTS.Rdata"))
+
+# ******* Find mean, minimum, maximum across models (ensemble) for hist and eoc ****
+#Ens.max.example <- max(soilTS[,1,"Andisol","tsl0.01m","hist",1:365], na.rm=T)
+#Ens.max.eoc.ex <- max(soilTS[,1,"Andisol","tsl0.01m","EOC",1:365], na.rm=T)
+#Ens.mean.eoc.ex <- mean(soilTS[,1,"Andisol","tsl0.01m","EOC",1:365], na.rm=T)
+#Ens.mean.hist.ex <- mean(soilTS[,1,"Andisol","tsl0.01m","hist",1:365], na.rm=T)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+Step 2: Average Ensemble Values and Make Plots   
+```{r}
+# Average Ensemble Values
+#File <- paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvanceData.Rdata") # individual model outputs 
+File <- paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvanceData_wCase3.Rdata") # individual model outputs 
+
+load(File)
+
+soilArray.ens <- array(data=NA,dim=c(length(XP),length(SOIL)+1,4,6),dimnames=list(XP,c("Global",SOIL),c("tsl0.01m","tas","SoilMinusAir","Placeholder"),c("Ens.mean","Ens.sd","Case1","Case2","Case3", "standard_error")))
+
+# Model averaging code 
+for (x in XP){
+  soilArray.ens[x,"Global","tsl0.01m","Ens.mean"]<- mean(soilArray[,x,"Global","tsl0.01m","Advance"],na.rm=T) # Note that case1 is removed
+  soilArray.ens[x,"Global","tas","Ens.mean"]<- mean(soilArray[,x,"Global","tas","Advance"],na.rm=T)
+  soilArray.ens[x,"Global","tsl0.01m","Ens.sd"]<- sd(soilArray[,x,"Global","tsl0.01m","Advance"],na.rm=T)
+  soilArray.ens[x,"Global","tas","Ens.sd"]<- sd(soilArray[,x,"Global","tas","Advance"],na.rm=T)
+
+  # For standard error calculation: 
+  soilArray.ens[x,"Global","tsl0.01m","standard_error"]<- sd(soilArray[,x,"Global","tsl0.01m","Advance"],na.rm=T)/sqrt(length(soilArray[,x,"Global","tsl0.01m","Advance"],na.rm=T)) 
+  soilArray.ens[x,"Global","tas","standard_error"]<- sd(soilArray[,x,"Global","tas","Advance"],na.rm=T)/sqrt(length(soilArray[,x,"Global","tas","Advance"],na.rm=T)) 
+
+  
+  for (s in SOIL){
+    soilArray.ens[x,s,"tsl0.01m","Ens.mean"]<- mean(soilArray[,x,s,"tsl0.01m","Advance"],na.rm=T)
+    soilArray.ens[x,s,"tas","Ens.mean"]<- mean(soilArray[,x,s,"tas","Advance"],na.rm=T)
+    soilArray.ens[x,s,"SoilMinusAir","Ens.mean"]<- mean(soilArray[,x,s,"SoilMinusAir","Advance"],na.rm=T)
+    
+    soilArray.ens[x,s,"tsl0.01m","Ens.sd"]<- sd(soilArray[,x,s,"tsl0.01m","Advance"],na.rm=T)
+    soilArray.ens[x,s,"tas","Ens.sd"]<- sd(soilArray[,x,s,"tas","Advance"],na.rm=T)
+    soilArray.ens[x,s,"SoilMinusAir","Ens.sd"]<- sd(soilArray[,x,s,"SoilMinusAir","Advance"],na.rm=T)
+
+    # For standard error calculation: 
+ # soilArray.ens[x,s,"tas","standard_error"]<- sd(soilArray[,x,s,"tas","Advance"],na.rm=T)/sqrt(length(soilArray[,x,s,"tas","Advance"],na.rm=T)) 
+
+
+  }
+}
+
+save(soilArray.ens, file=paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvance.Ens.Rdata"))
+
+
+```
+
+Figure Plotting Chunk (bar chart output)
+```{r}
+File <- paste0(WD1,"Analysis/SeasonAdvance/DailySoilTempAdvance.Ens.Rdata") # ensemble average data  
+load(File) # this shows up as soilArray.ens 
+
+# Plot Ensemble Figure 
+#Plot the bars in custom order
+# TODO in progress 
+
+figname<-"Fig.rcp85.SoilOrder.Advance.pdf"
+ymax <- 100
+pdf(paste(WD1,"Analysis/Figures/final-figs/",figname,sep=""))
+  par(mar=c(1,4,0.5,4), oma=c(6,0,1,0),mfrow=c(2,1))
+  #Plot the bars in custom order 
+  LevelsOrder<-c("Global","Rock","ShiftingSand","Entisol","Inceptisol","Aridisol","Andisol","Gelisol","Histosol","Spodosol","Alfisol","Mollisol","Vertisol","Ultisol","Oxisol")
+  VarOrder <- c("tsl0.01m","tas","Placeholder")
+  #dev.off()
+  par(mar=c(1,4,0.5,4), oma=c(6,0,1,0),mfrow=c(2,1)) # set dimensions 
+  {barplot(t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"]),beside=T,ylim=c(0,ymax),las=2,axes=FALSE,names.arg=LevelsOrder)
+  ticks<-seq(1.5, by=1,length.out=(15*4))[-seq(4,by=4,length.out=15)]
+  #Light tan
+  polygon(x=c(rep(ticks[1],2)-2.8,rep(ticks[15],2)+1),y=c(0,ymax,ymax,0),col=rgb(246,232,195,255,maxColorValue=255),border=NA)
+  #Tan
+  polygon(x=c(rep(ticks[16],2)-1,rep(ticks[18],2)+1),y=c(0,ymax,ymax,0),col=rgb(216,179,101,255,maxColorValue=255),border=NA)
+  #Light cyan
+  polygon(x=c(rep(ticks[19],2)-1,rep(ticks[21],2)+1),y=c(0,ymax,ymax,0),col=rgb(199,234,229,255,maxColorValue=255),border=NA)
+  #Dark cyan
+  polygon(x=c(rep(ticks[22],2)-1,rep(ticks[30],2)+1),y=c(0,ymax,ymax,0),col=rgb(1,102,94,255,maxColorValue=255),border=NA)
+  #Cyan
+  polygon(x=c(rep(ticks[31],2)-1,rep(ticks[39],2)+1),y=c(0,ymax,ymax,0),col=rgb(90,180,172,255,maxColorValue=255),border=NA)
+  #Dark Orange
+  polygon(x=c(rep(ticks[40],2)-1,rep(ticks[45],2)+2.8),y=c(0,ymax,ymax,0),col=rgb(140,81,10,255,maxColorValue=255),border=NA)
+  par(new=TRUE)
+  # TODO change y axis title
+  barplot(t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"]),beside=T,ylab=expression("Advancement (days) of 10"~degree~C),las=2, mgp=c(2,0.5,0), col=c(gray(0.9),gray(0.5),gray(0.1)),names.arg=rep(NA,15),legend.text=c("Soil temp 0.01 m","Surface air temp"), ylim=c(0,ymax),args.legend=list(x="topright",bg="white"))
+  box(bty="l")
+  # TODO this last chunk deals with error bars; decide whether to show +/- ens mean or min/max value
+  arrows(ticks,t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"]),ticks,(t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"])+t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.sd"])),angle=90,length=0.05)
+  arrows(ticks,t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"]),ticks,(t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.mean"])-t(soilArray.ens[1,LevelsOrder,VarOrder,"Ens.sd"])),angle=90,length=0.05)
+  }
+  dev.off()
+  
+```
+
